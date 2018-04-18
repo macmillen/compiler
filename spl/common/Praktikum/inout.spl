@@ -1,0 +1,12 @@
+
+proc main(){
+
+    var i: int;
+    var y: int;
+
+    readi(ref i: int);
+    readi(ref y: int);
+
+    var summe: int := i + y;
+    printi(summe);
+}

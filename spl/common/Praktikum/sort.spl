@@ -1,0 +1,27 @@
+proc main(){
+    var i:int;
+    var y:int;
+    var sum:int;
+    var arr: array [5];
+    var len:int := 5;
+    var loop:int := 0;
+    var loop2:int := 0;
+
+    while(loop < len) {
+        readi(arr[loop]);
+        loop := loop + 1;
+    }
+    loop := 0;
+    while(loop < len) {
+        while(loop2 < len) {
+            if(arr[loop] < arr[loop2])
+                swap(arr[loop], arr[loop2])
+            loop2 := loop2 + 1;            
+        }
+        loop := loop + 1;
+    }
+}
+
+proc sum(ref i:int, ref y: int, ref sum:int){
+    sum := i + y;
+}
