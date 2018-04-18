@@ -2,10 +2,13 @@ proc main(){
     var i:int;
     var y:int;
     var sum:int;
-    var arr: array [5];
-    var len:int := 5;
-    var loop:int := 0;
-    var loop2:int := 0;
+    var arr: array [5] of int;
+    var len:int;
+    len := 5;
+    var loop:int;
+    loop := 0;
+    var loop2:int;
+    loop2 := 0;
 
     while(loop < len) {
         readi(arr[loop]);

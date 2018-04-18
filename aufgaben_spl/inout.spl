@@ -3,7 +3,7 @@ proc main(){
 
     var i: int;
     var y: int;
-    var summe;
+    var summe: int;
 
     readi(i);
     readi(y);
