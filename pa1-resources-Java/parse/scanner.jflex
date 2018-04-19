@@ -153,6 +153,7 @@ package parse;
 		  /* comment: nothing returned */
 		}
 
+
 array		{
 		  return symbol(sym.ARRAY);
 		}
@@ -169,6 +170,29 @@ array		{
 		  return symbol(sym.INTLIT,
 		                (int) yytext().charAt(1));
 		}
+\[      {
+      return symbol(sym.LBRACK);
+    }
+\]      { 
+      return symbol(sym.RBRACK);
+    }
+\(      {
+      return symbol(sym.LPAREN);
+    }
+\)    {
+      return symbol(sym.RBRACK);
+    }
+[proc]{
+      return symbol(sym.PROC)
+}
+//Ksdfawefw
+
+
+ 
+
+
+
+
 
 \'		{
 		  throw new RuntimeException(
