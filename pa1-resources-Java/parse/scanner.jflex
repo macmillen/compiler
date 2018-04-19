@@ -182,7 +182,7 @@ array		{
 \)    {
       return symbol(sym.RBRACK);
     }
-[proc]{
+proc{
       return symbol(sym.PROC)
 }
 //Ksdfawefw
