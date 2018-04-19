@@ -1,0 +1,1 @@
+java -jar JFlex.jar /home/eric/Documents/THM/CB/Praktikum/compiler/pa1-resources-Java/parse/scanner.jflex

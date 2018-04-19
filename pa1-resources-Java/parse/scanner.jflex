@@ -182,10 +182,21 @@ array		{
 \)    {
       return symbol(sym.RBRACK);
     }
-proc{
-      return symbol(sym.PROC)
+"\n"  {
+      return symbol(sym.INTLIT, 13);
+} 
+
+proc  {
+      return symbol(sym.PROC);
 }
-//Ksdfawefw
+// 0x, 1234 'a' '\n'
+
+0x[a-fA-F0-9]*  {
+      return symbol(sym.INTLIT, Integer.parseInt(yytext().substring(2), 16));
+} 
+
+
+
 
 
  
