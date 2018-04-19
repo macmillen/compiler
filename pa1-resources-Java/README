@@ -1,0 +1,18 @@
+Vorgegebene Dateien
+-------------------
+
+README               -  die Beschreibung, die Sie gerade lesen
+Makefile             -  ein Makefile zur automatischen Uebersetzung
+Tests                -  ein Subdirectory, in dem Sie Ihre Tests aufbewahren
+spl                  -  ein Skript zum Aufruf des SPL-Compilers
+lib                  -  ein Subdirectory fuer die Tool-Bibliotheken
+lib/JFlex.jar        -  der Scannergenerator
+main                 -  ein Subdirectory fuer das Hauptprogramm
+main/Main.java       -  das Hauptprogramm des SPL-Compilers
+parse                -  ein Subdirectory fuer den Scanner (und den Parser)
+parse/scanner.jflex  -  die Scanner-Spezifikation: das ist Ihre Aufgabe
+parse/Symbol.java    -  eine vorlaeufige Klasse fuer Token
+                        (wird spaeter vom Parsergenerator bereitgestellt)
+parse/sym.java       -  eine vorlaeufige Zuordnung von Token-Nummern
+                        (wird spaeter vom Parsergenerator erzeugt)
+
