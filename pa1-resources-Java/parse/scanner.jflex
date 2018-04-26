@@ -166,10 +166,20 @@ array		{
 		  return symbol(sym.RCURL);
 		}
 
+
+
+\'\\n\'  {
+  return symbol(sym.INTLIT, 10);
+}
+
+\'\\\'  {
+  return symbol(sym.INTLIT, 92);
+}
+
 \'.\'		{
 		  return symbol(sym.INTLIT,
 		                (int) yytext().charAt(1));
-		}
+    }
 \[      {
       return symbol(sym.LBRACK);
     }
@@ -185,6 +195,9 @@ array		{
 "\n"  {
       return symbol(sym.INTLIT, 13);
 } 
+"\t"  {
+      return symbol(sym.INTLIT, 9);
+}
 " "   {
       return symbol(sym.INTLIT, 32);
 }
@@ -228,7 +241,7 @@ type   {
       return symbol(sym.INTLIT, Integer.parseInt(yytext().substring(2), 16));
 } 
 
-([1-9][0-9]*)|0     {
+([-]?[1-9][0-9]*)|0     {
       return symbol(sym.INTLIT, Integer.parseInt(yytext()));
 }
 
@@ -296,6 +309,7 @@ type   {
 \=    {
   return symbol(sym.EQ);
 }
+
 
 \'		{
 		  throw new RuntimeException(
