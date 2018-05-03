@@ -4,7 +4,7 @@
 
 
 package parse;
-
+import java_cup.runtime.*;
 
 %%
 
@@ -13,12 +13,7 @@ package parse;
 %public
 %line
 %column
-%type Symbol
-%function next_token
-%eofval{
-  return symbol(sym.EOF);
-%eofval}
-%eofclose
+%cup
 
 %{
 
