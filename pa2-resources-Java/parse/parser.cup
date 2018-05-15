@@ -45,16 +45,20 @@ type                  ::= IDENT |
       ;
 procedure             ::= PROC IDENT LPAREN params_procedure RPAREN LCURL statement RCURL
       ;
-procedure_call        ::= IDENT LPAREN 
+procedure_call        ::= IDENT LPAREN params_procedure_call RPAREN SEMIC
       ;
-params_procedure      ::= IDENT COLON type
+params_procedure      ::= IDENT COLON type params_procedure |
       ;
-params_procedure_call ::= IDENT |
-                          COMMA IDENT
+params_procedure_call ::= | params_procedure_c1 params_procedure_c2
+      ;
+params_procedure_c1   ::= IDENT | INTLIT
+      ;
+params_procedure_c2   ::= COMMA IDENT params_procedure_call |
+                          COMMA INTLIT params_procedure_call |
       ;
 vardec                ::= VAR IDENT COLON type SEMIC
       ;
-varassign             ::= IDENT ASGN INTLIT SEMIC
+varassign             ::= IDENT ASGN expression SEMIC
       ;
 statement             ::= while_statement |
                           compound_statement |
@@ -65,8 +69,6 @@ while_statement       ::= WHILE LPAREN expression RPAREN LCURL statement RCURL
 compound_statement    ::= LCURL vardec | varassign 
       ;
 if_statement          ::= IF LPAREN expression RPAREN LCURL statement RCURL
-      ;
-operator              ::= LT | GT | GE | LE | EQ | PLUS | MINUS | STAR | SLASH
       ;
 expression            ::= expression LT exp1 |
                           expression LE exp1 |
