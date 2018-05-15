@@ -4,7 +4,7 @@
 
 
 package parse;
-
+import java_cup.runtime.*;
 
 %%
 
@@ -13,12 +13,7 @@ package parse;
 %public
 %line
 %column
-%type Symbol
-%function next_token
-%eofval{
-  return symbol(sym.EOF);
-%eofval}
-%eofclose
+%cup
 
 %{
 
@@ -166,10 +161,20 @@ array		{
 		  return symbol(sym.RCURL);
 		}
 
+
+
+\'\\n\'  {
+  return symbol(sym.INTLIT, 10);
+}
+
+\'\\\'  {
+  return symbol(sym.INTLIT, 92);
+}
+
 \'.\'		{
 		  return symbol(sym.INTLIT,
 		                (int) yytext().charAt(1));
-		}
+    }
 \[      {
       return symbol(sym.LBRACK);
     }
@@ -185,24 +190,120 @@ array		{
 "\n"  {
       return symbol(sym.INTLIT, 13);
 } 
+"\t"  {
+      return symbol(sym.INTLIT, 9);
+}
+" "   {
+      return symbol(sym.INTLIT, 32);
+}
+
 
 proc  {
       return symbol(sym.PROC);
 }
 // 0x, 1234 'a' '\n'
 
+if    {
+      return symbol(sym.IF);
+}
+
+else  {
+      return symbol(sym.ELSE);
+}
+
+while {
+      return symbol(sym.WHILE);
+}
+
+of    {
+      return symbol(sym.OF);
+}
+
+var    {
+      return symbol(sym.VAR);
+}
+
+ref    {
+      return symbol(sym.REF);
+}
+
+type   {
+      return symbol(sym.TYPE);
+}
+
+
 0x[a-fA-F0-9]*  {
       return symbol(sym.INTLIT, Integer.parseInt(yytext().substring(2), 16));
 } 
 
+([-]?[1-9][0-9]*)|0     {
+      return symbol(sym.INTLIT, Integer.parseInt(yytext()));
+}
 
 
+[_a-zA-Z][0-9_a-zA-Z]* {
+  return symbol(sym.IDENT, yytext());
+}
 
+\:    {
+  return symbol(sym.COLON);
+}
 
- 
+\;    {
+  return symbol(sym.SEMIC);
+}
 
+\+    {
+  return symbol(sym.PLUS);
+}
 
+\-    {
+  return symbol(sym.MINUS);
+  
+}
 
+\*    {
+  return symbol(sym.STAR);
+  
+}
+
+\/    {
+  return symbol(sym.SLASH);
+  
+}
+
+\<    {
+  return symbol(sym.LT);
+}
+
+\>    {
+  return symbol(sym.GT);
+}
+
+\<\=  {
+  return symbol(sym.LE);
+}
+
+\>\=  {
+  
+  return symbol(sym.GE);
+}
+
+\#    {
+  return symbol(sym.NE);
+}
+
+\:\=  {
+  return symbol(sym.ASGN);
+}
+
+\,    {
+  return symbol(sym.COMMA);
+}
+
+\=    {
+  return symbol(sym.EQ);
+}
 
 
 \'		{
