@@ -1,0 +1,85 @@
+/*
+ * parser.cup -- SPL parser specification
+ */
+
+
+package parse;
+
+import java_cup.runtime.*;
+
+/* Preliminaries to set up and use the scanner.  */
+init with {: scanner.init();              :};
+scan with {: return scanner.next_token(); :};
+
+parser code {:
+
+  public void syntax_error(Symbol currToken) {
+    System.out.println(
+      "**** Error: syntax error" +
+      " in line " + currToken.left +
+      ", column " + currToken.right
+    );
+    System.exit(0);
+  }
+
+:}
+
+/* Terminals (tokens returned by the scanner). */
+terminal		ARRAY;
+
+/* Non-terminals */
+non terminal		program;
+
+start with program;
+
+
+program			          ::= ARRAY |
+                          typedef |
+                          procedure
+			;
+
+typedef               ::= TYPE IDENT EQ type SEMIC
+      ;
+type                  ::= IDENT |
+                          ARRAY LBRACK INTLIT RBRACK OF type SEMIC
+      ;
+procedure             ::= PROC IDENT LPAREN params_procedure RPAREN LCURL statement RCURL
+      ;
+procedure_call        ::= IDENT LPAREN 
+      ;
+params_procedure      ::= IDENT COLON type
+      ;
+params_procedure_call ::= IDENT |
+                          COMMA IDENT
+      ;
+vardec                ::= VAR IDENT COLON type SEMIC
+      ;
+varassign             ::= IDENT ASGN INTLIT SEMIC
+      ;
+statement             ::= while_statement |
+                          compound_statement |
+                          if_statement
+      ;
+while_statement       ::= WHILE LPAREN expression RPAREN LCURL statement RCURL
+      ;
+compound_statement    ::= LCURL vardec | varassign 
+      ;
+if_statement          ::= IF LPAREN expression RPAREN LCURL statement RCURL
+      ;
+operator              ::= LT | GT | GE | LE | EQ | PLUS | MINUS | STAR | SLASH
+      ;
+expression            ::= expression LT exp1 |
+                          expression LE exp1 |
+                          expression GT exp1 |
+                          expression GE exp1 |
+                          expression
+      ;
+exp1                  ::= exp1 SLASH exp2 |
+                          exp1 STAR exp2 |
+                          exp1
+      ;
+exp2                  ::= exp2 PLUS exp3 |
+                          exp2 MINUS exp3
+      ;
+exp3                  ::= IDENT | INTLIT | array_access
+      ;

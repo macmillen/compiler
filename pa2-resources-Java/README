@@ -1,0 +1,10 @@
+Vorgegebene Dateien
+-------------------
+
+README            -  die Beschreibung, die Sie gerade lesen
+Makefile          -  ein Makefile zur automatischen Uebersetzung
+spl               -  ein Skript zum Aufruf des SPL-Compilers
+lib/*.jar         -  der Parsergenerator und die Laufzeitunterstuetzung
+main/Main.java    -  das Hauptprogramm des SPL-Compilers
+parse/parser.cup  -  die Parser-Spezifikation: das ist Ihre Aufgabe
+
