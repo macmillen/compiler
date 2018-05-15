@@ -43,7 +43,7 @@ typedef               ::= TYPE IDENT EQ type SEMIC
 type                  ::= IDENT |
                           ARRAY LBRACK INTLIT RBRACK OF type SEMIC
       ;
-procedure             ::= PROC IDENT LPAREN params_procedure RPAREN LCURL statement RCURL
+procedure             ::= PROC IDENT LPAREN params_procedure RPAREN LCURL statements RCURL
       ;
 procedure_call        ::= IDENT LPAREN params_procedure_call RPAREN SEMIC
       ;
@@ -53,35 +53,41 @@ params_procedure_call ::= | params_procedure_c1 params_procedure_c2
       ;
 params_procedure_c1   ::= IDENT | INTLIT
       ;
-params_procedure_c2   ::= COMMA IDENT params_procedure_call |
-                          COMMA INTLIT params_procedure_call |
+params_procedure_c2   ::= COMMA expression params_procedure_call |
       ;
 vardec                ::= VAR IDENT COLON type SEMIC
       ;
 varassign             ::= IDENT ASGN expression SEMIC
       ;
-statement             ::= while_statement |
+statements            ::= while_statement |
                           compound_statement |
-                          if_statement
+                          if_statement |
+                          statement |
+                          varassign |
+                          procedure_call |
+                          SEMIC
       ;
-while_statement       ::= WHILE LPAREN expression RPAREN LCURL statement RCURL
+statement             ::= expression | varassign
       ;
-compound_statement    ::= LCURL vardec | varassign 
+while_statement       ::= WHILE LPAREN expression RPAREN statements
       ;
-if_statement          ::= IF LPAREN expression RPAREN LCURL statement RCURL
+compound_statement    ::= LCURL statements RCURL
+      ;
+if_statement          ::= IF LPAREN expression RPAREN statements
       ;
 expression            ::= expression LT exp1 |
                           expression LE exp1 |
                           expression GT exp1 |
                           expression GE exp1 |
-                          expression
+                          exp1
       ;
 exp1                  ::= exp1 SLASH exp2 |
                           exp1 STAR exp2 |
-                          exp1
+                          exp2
       ;
 exp2                  ::= exp2 PLUS exp3 |
-                          exp2 MINUS exp3
+                          exp2 MINUS exp3 |
+                          exp3
       ;
 exp3                  ::= IDENT | INTLIT | array_access
       ;
