@@ -8,6 +8,7 @@ public abstract class Absyn {
 
 	public int row;
 	public int col;
+    public int size;
 
 	public int getRow() {
 		return row;

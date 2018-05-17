@@ -6,6 +6,8 @@
 package parse;
 
 import java_cup.runtime.*;
+import sym.*;
+import absyn.*;
 
 /* Preliminaries to set up and use the scanner.  */
 /*
@@ -35,8 +37,8 @@ terminal String		IDENT;
 
 /* Non-terminals */
 
-non terminal		program;
-non terminal		typedef;
+non terminal    DecList	program;
+non terminal	Dec	typedef;
 non terminal		type;
 non terminal		procedure;
 non terminal		procedure_call;
@@ -63,25 +65,26 @@ non terminal		number;
 
 start with program;
 
-program			        ::= typedef program | procedure program | 
+program			        ::= typedef:type program:prog {:RESULT = new DecList(type, prog);:} | procedure program {:RESULT = ;:} | {:RESULT = new DecList();:} 
     ;
 typedef                 ::= TYPE IDENT EQ type SEMIC
     ;
-type                    ::= IDENT |
+type                    ::= IDENT:ident 
+                            {:RESULT = new VarExp(identleft, identright, new SimpleVar(identleft, identright, newSym(ident)));:}| {:RESULT = ...;:} //Ohne Gewähr
                             ARRAY LBRACK INTLIT RBRACK OF type
     ;
 procedure               ::= PROC IDENT LPAREN parameterList RPAREN LCURL vardecs statements RCURL
     ;
 procedure_call          ::= IDENT LPAREN argumentList RPAREN SEMIC
     ;
-
 parameter 				::= IDENT COLON type | REF IDENT COLON type
 	;
 parameterList 			::= | parameter paramListTail
 	;
 paramListTail 			::= | COMMA parameter paramListTail
 	;
-argument 				::= expression
+argument 				::= expression:expr
+                            {:RESULT = expr;:}
 	;
 argumentList			::= |  argumentListTail
 	;
@@ -106,8 +109,10 @@ statements				::= statement statements |
 
 refExpression 			::= IDENT | refExpression LBRACK expression RBRACK
 	;
-expression              ::= simple_expression EQ simple_expression |
-							simple_expression NE simple_expression |
+expression              ::= simple_expression EQ simple_expression 
+                            {:RESULT = new OpExp(pos1, pos2, operator, op1, op2);:}
+							|
+                            simple_expression NE simple_expression |
 							simple_expression LT simple_expression |
 							simple_expression LE simple_expression |
 							simple_expression GT simple_expression |
