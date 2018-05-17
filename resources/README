@@ -8,3 +8,7 @@ lib/*.jar         -  der Parsergenerator und die Laufzeitunterstuetzung
 main/Main.java    -  das Hauptprogramm des SPL-Compilers
 parse/parser.cup  -  die Parser-Spezifikation: das ist Ihre Aufgabe
 
+absyn/*.java    -  die Abstrakte Syntax mit Visitor-Klassen für das Backend
+main/Main.java  -  das Hauptprogramm des SPL-Compilers
+sym/Sym.java    -  die Symbolverwaltung
+
