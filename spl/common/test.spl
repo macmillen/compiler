@@ -1,0 +1,21 @@
+proc main(){
+	var a: int;
+	a := 2;
+	a := 4;
+}
+
+type i = int;
+type i = int;
+type i = int;
+type i = int;
+type i = int;
+type i = int;
+type i = int;
+type i = int;
+type i = int;
+type i = int;
+type i = int;
+type i = int;
+type i = int;
+type i = int;
+

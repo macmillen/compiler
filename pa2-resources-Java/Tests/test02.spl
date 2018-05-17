@@ -1,0 +1,27 @@
+type zahl = int;
+type ar15 = array [15] of zahl;
+type ar215 = array[2] of ar15;
+
+proc main(){
+	var i:int;
+	var a: ar215;
+
+ while(i < (8-7)){
+	i := i+1;;;;;;;;
+	i := (i + 2)*3;
+	a[1][2] := a[0-1][64/32];
+	blub();
+	blub1(12);
+	blub2(78, a[0]);
+ }
+}
+
+proc blub(){
+	
+}
+proc blub1(a:int){
+	
+}
+proc blub2(a:int, ref b:ar15){
+	
+}

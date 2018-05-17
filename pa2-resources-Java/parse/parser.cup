@@ -8,9 +8,10 @@ package parse;
 import java_cup.runtime.*;
 
 /* Preliminaries to set up and use the scanner.  */
+/*
 init with {: scanner.init();              :};
 scan with {: return scanner.next_token(); :};
-
+*/
 parser code {:
 
   public void syntax_error(Symbol currToken) {
@@ -25,45 +26,66 @@ parser code {:
 :}
 
 /* Terminals (tokens returned by the scanner). */
-terminal		ARRAY;
+terminal			ARRAY, ELSE, IF, OF, PROC, REF, TYPE, VAR, WHILE, LPAREN, RPAREN, LBRACK,
+					RBRACK, LCURL, RCURL, EQ, NE, LT, LE, GT, GE, ASGN, COLON, COMMA, SEMIC, PLUS,
+					MINUS, STAR, SLASH;
+terminal Integer	INTLIT;
+terminal String		IDENT;
+
 
 /* Non-terminals */
+
 non terminal		program;
+non terminal		typedef;
+non terminal		type;
+non terminal		procedure;
+non terminal		procedure_call;
+non terminal		parameter;
+non terminal		parameterList;
+non terminal		paramListTail;
+non terminal		argument;
+non terminal		argumentList;
+non terminal		argumentListTail;
+non terminal		vardec;
+non terminal		vardecs;
+non terminal		varassign;
+non terminal		while_statement;
+non terminal		if_statement;
+non terminal		statement;
+non terminal		statements;
+non terminal		refExpression;
+non terminal		expression;
+non terminal		simple_expression;
+non terminal		term;
+non terminal		unary;
+non terminal		factor;
+non terminal		number;
 
 start with program;
 
-
-program			        ::= typedef | procedure
+program			        ::= typedef program | procedure program | 
     ;
 typedef                 ::= TYPE IDENT EQ type SEMIC
     ;
 type                    ::= IDENT |
-                            ARRAY LBRACK INTLIT RBRACK OF type SEMIC
+                            ARRAY LBRACK INTLIT RBRACK OF type
     ;
-procedure               ::= PROC IDENT LPAREN params_procedure RPAREN LCURL vardecs statement_sequence RCURL
+procedure               ::= PROC IDENT LPAREN parameterList RPAREN LCURL vardecs statements RCURL
     ;
-procedure_call          ::= IDENT LPAREN params_procedure_call RPAREN SEMIC
-    ;
-params_procedure        ::= IDENT COLON type params_procedure |
-    ;
-params_procedure_call   ::= | params_procedure_c1 params_procedure_c2
-    ;
-params_procedure_c1     ::= refExpression | expression
-    ;
-params_procedure_c2     ::= COMMA expression params_procedure_call |
+procedure_call          ::= IDENT LPAREN argumentList RPAREN SEMIC
     ;
 
 parameter 				::= IDENT COLON type | REF IDENT COLON type
 	;
 parameterList 			::= | parameter paramListTail
 	;
-paramListTail 			::= | COMMA parameter | COMMA parameter paramListTail
+paramListTail 			::= | COMMA parameter paramListTail
 	;
-argument 				::= refExpression | expression
+argument 				::= expression
 	;
-argumentList			::= | parameter paramListTail
+argumentList			::= |  argumentListTail
 	;
-argumentListTail 		::= | COMMA parameter | COMMA parameter paramListTail
+argumentListTail 		::= argument | argument COMMA argumentListTail
 	;
 
 vardec                  ::= VAR IDENT COLON type SEMIC
@@ -90,6 +112,7 @@ expression              ::= simple_expression EQ simple_expression |
 							simple_expression LE simple_expression |
 							simple_expression GT simple_expression |
 							simple_expression GE simple_expression |
+							simple_expression
     ; 
 simple_expression       ::= term | term PLUS simple_expression | term MINUS simple_expression
     ;
@@ -99,3 +122,5 @@ unary 					::= factor | MINUS factor
 	;
 factor                  ::= refExpression | number | LPAREN expression RPAREN
     ;
+number					::= INTLIT
+	;

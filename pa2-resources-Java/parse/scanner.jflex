@@ -185,7 +185,7 @@ array		{
       return symbol(sym.LPAREN);
     }
 \)    {
-      return symbol(sym.RBRACK);
+      return symbol(sym.RPAREN);
     }
 [\n\t ]  {
 
@@ -230,7 +230,7 @@ type   {
       return symbol(sym.INTLIT, Integer.parseInt(yytext().substring(2), 16));
 } 
 
-([-]?[1-9][0-9]*)|0     {
+([1-9][0-9]*)|0     {
       return symbol(sym.INTLIT, Integer.parseInt(yytext()));
 }
 
