@@ -33,14 +33,14 @@ non terminal		program;
 start with program;
 
 
-program			        ::= ARRAY | typedef | procedure
+program			        ::= typedef | procedure
     ;
 typedef                 ::= TYPE IDENT EQ type SEMIC
     ;
 type                    ::= IDENT |
                             ARRAY LBRACK INTLIT RBRACK OF type SEMIC
     ;
-procedure               ::= PROC IDENT LPAREN params_procedure RPAREN LCURL {vardec} statements RCURL
+procedure               ::= PROC IDENT LPAREN params_procedure RPAREN LCURL vardecs statement_sequence RCURL
     ;
 procedure_call          ::= IDENT LPAREN params_procedure_call RPAREN SEMIC
     ;
@@ -48,33 +48,54 @@ params_procedure        ::= IDENT COLON type params_procedure |
     ;
 params_procedure_call   ::= | params_procedure_c1 params_procedure_c2
     ;
-params_procedure_c1     ::= IDENT | INTLIT
+params_procedure_c1     ::= refExpression | expression
     ;
 params_procedure_c2     ::= COMMA expression params_procedure_call |
     ;
+
+parameter 				::= IDENT COLON type | REF IDENT COLON type
+	;
+parameterList 			::= | parameter paramListTail
+	;
+paramListTail 			::= | COMMA parameter | COMMA parameter paramListTail
+	;
+argument 				::= refExpression | expression
+	;
+argumentList			::= | parameter paramListTail
+	;
+argumentListTail 		::= | COMMA parameter | COMMA parameter paramListTail
+	;
+
 vardec                  ::= VAR IDENT COLON type SEMIC
     ;
-varassign               ::= IDENT ASGN expression SEMIC
+vardecs					::= vardec vardecs |
+	;
+varassign               ::= refExpression ASGN expression SEMIC
     ;
-
-while_statement         ::= WHILE LPAREN expression RPAREN statements
+while_statement         ::= WHILE LPAREN expression RPAREN statement
     ;   
-if_statement            ::= IF LPAREN expression RPAREN statements
-                            [ELSE statements]
+if_statement            ::= IF LPAREN expression RPAREN statement |
+                            IF LPAREN expression RPAREN statement ELSE statement
     ;
+statement               ::= varassign | procedure_call | if_statement | while_statement | SEMIC | LCURL statements RCURL
+    ;
+statements				::= statement statements | 
+	;
 
-statement               ::= [ varassign | procedure_call | if_statement | while_statement | SEMIC ]
+refExpression 			::= IDENT | refExpression LBRACK expression RBRACK
+	;
+expression              ::= simple_expression EQ simple_expression |
+							simple_expression NE simple_expression |
+							simple_expression LT simple_expression |
+							simple_expression LE simple_expression |
+							simple_expression GT simple_expression |
+							simple_expression GE simple_expression |
+    ; 
+simple_expression       ::= term | term PLUS simple_expression | term MINUS simple_expression
     ;
-statements              ::= statement | LCURL { statement } RCURL
+term                    ::= unary | unary STAR term | unary SLASH term
     ;
-
-
-// FRAGE: [{(EQ | NE | LT | LE | GT | GE) simple_expression}]   
-expression              ::= simple_expression [(EQ | NE | LT | LE | GT | GE) simple_expression]
-    ;   
-simple_expression       ::= [PLUS | MINUS] term {(PLUS | MINUS) term}
-    ;
-term                    ::= factor {(STAR | SLASH) factor}
-    ;
-factor                  ::= IDENT | number | LPAREN expression RPAREN
+unary 					::= factor | MINUS factor 
+	;
+factor                  ::= refExpression | number | LPAREN expression RPAREN
     ;
