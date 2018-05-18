@@ -37,31 +37,31 @@ terminal String		IDENT;
 
 /* Non-terminals */
 
-non terminal    DecList	program;
-non terminal	Dec	typedef;
-non terminal		type;
-non terminal		procedure;
-non terminal		procedure_call;
-non terminal		parameter;
-non terminal		parameterList;
-non terminal		paramListTail;
-non terminal		argument;
-non terminal		argumentList;
-non terminal		argumentListTail;
-non terminal		vardec;
-non terminal		vardecs;
-non terminal		varassign;
-non terminal		while_statement;
-non terminal		if_statement;
-non terminal		statement;
-non terminal		statements;
-non terminal		refExpression;
-non terminal		expression;
-non terminal		simple_expression;
-non terminal		term;
-non terminal		unary;
-non terminal		factor;
-non terminal		number;
+non terminal        DecList program;
+non terminal	    TypeDec typedef;
+non terminal		Ty type;
+non terminal		ProcDec procedure;
+non terminal		CallStm procedure_call;
+non terminal		ParDec parameter;
+non terminal		DecList parameterList;
+non terminal		DecList paramListTail;
+non terminal		Exp argument;
+non terminal		ExpList argumentList;
+non terminal		ExpList argumentListTail;
+non terminal		VarDec vardec;
+non terminal		VarDec vardecs;
+non terminal		AssignStm varassign;
+non terminal		WhileStm while_statement;
+non terminal		IfStm if_statement;
+non terminal		Stm statement;
+non terminal		StmList statements;
+non terminal		Exp refExpression;
+non terminal		Exp expression;
+non terminal		Exp simple_expression;
+non terminal		Exp term;
+non terminal		Exp unary;
+non terminal		Exp factor;
+non terminal		Exp number;
 
 start with program;
 
@@ -73,13 +73,15 @@ type                    ::= IDENT:ident
                             {:RESULT = new VarExp(identleft, identright, new SimpleVar(identleft, identright, newSym(ident)));:}| {:RESULT = ...;:} //Ohne Gewähr
                             ARRAY LBRACK INTLIT RBRACK OF type
     ;
-procedure               ::= PROC IDENT LPAREN parameterList RPAREN LCURL vardecs statements RCURL
+procedure               ::= PROC IDENT:ident {:RESULT = new ProcDec(identleft, identright, newSym(ident), params, decls, stmts);:}
+                            LPAREN parameterList:params RPAREN LCURL vardecs:decls statements:stmts RCURL
     ;
-procedure_call          ::= IDENT LPAREN argumentList RPAREN SEMIC
+procedure_call          ::= IDENT LPAREN argumentList:expList RPAREN SEMIC {:RESULT = new CallStm(identleft, identright, newSym(ident), expList);:}
     ;
-parameter 				::= IDENT COLON type | REF IDENT COLON type
+parameterList 			::= {:RESULT = new DecList();:} | parameter:dec paramListTail:decList {:RESULT = new DecList(dec, decList);:}
 	;
-parameterList 			::= | parameter paramListTail
+parameter 				::= IDENT:ident COLON type:typ {:RESULT = new ParDec(identleft, identright, newSym(ident), typ, false);:} |
+                            REF IDENT:ident COLON type:typ {:RESULT = new ParDec(identleft, identright, newSym(ident), typ, true);:}
 	;
 paramListTail 			::= | COMMA parameter paramListTail
 	;
