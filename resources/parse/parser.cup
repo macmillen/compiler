@@ -38,6 +38,8 @@ terminal String		IDENT;
 /* Non-terminals */
 
 non terminal        DecList program;
+non terminal        Dec decs;
+non terminal        Dec dec;
 non terminal	    TypeDec typedef;
 non terminal		Ty type;
 non terminal		ProcDec procedure;
@@ -63,10 +65,12 @@ non terminal		Exp unary;
 non terminal		Exp factor;
 
 start with program;
-
-program			        ::= typedef:type program:prog {:RESULT = new TypeDec(type, prog);:} |
-                            procedure program {:RESULT = new ProcDec();:} |
-                            {:RESULT = new DecList();:}
+program                 ::= decs:d {:RESULT = new DecList(d, new DecList());:} | {:RESULT = new DecList();:}
+    ;
+decs                    ::= dec | dec decs
+    ;
+dec 			        ::= typedef |
+                            procedure |
     ;
 typedef                 ::= TYPE IDENT:ident EQ type:ty SEMIC
                             {:RESULT = new TypeDec(identleft, identright, newSym(ident), ty);:}
