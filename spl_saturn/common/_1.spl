@@ -1,0 +1,10 @@
+
+type tt = int;
+proc main() {
+    a(2 + 4, 4);
+}
+type td = int;
+
+proc a(x : int, y : int) {
+    
+}

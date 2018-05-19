@@ -61,16 +61,18 @@ non terminal		Exp simple_expression;
 non terminal		Exp term;
 non terminal		Exp unary;
 non terminal		Exp factor;
-non terminal		Exp number;
 
 start with program;
 
-program			        ::= typedef:type program:prog {:RESULT = new DecList(type, prog);:} | procedure program {:RESULT = ;:} | {:RESULT = new DecList();:} 
+program			        ::= typedef:type program:prog {:RESULT = new TypeDec(type, prog);:} |
+                            procedure program {:RESULT = new ProcDec();:} |
+                            {:RESULT = new DecList();:}
     ;
-typedef                 ::= TYPE IDENT EQ type SEMIC
+typedef                 ::= TYPE IDENT:ident EQ type:ty SEMIC
+                            {:RESULT = new TypeDec(identleft, identright, newSym(ident), ty);:}
     ;
 type                    ::= IDENT:ident 
-                            {:RESULT = new VarExp(identleft, identright, new SimpleVar(identleft, identright, newSym(ident)));:}| {:RESULT = ...;:} //Ohne Gewähr
+                            {:RESULT = new VarExp(identleft, identright, new SimpleVar(identleft, identright, newSym(ident)));:} |
                             ARRAY LBRACK INTLIT RBRACK OF type
     ;
 procedure               ::= PROC IDENT:ident {:RESULT = new ProcDec(identleft, identright, newSym(ident), params, decls, stmts);:}
@@ -83,51 +85,70 @@ parameterList 			::= {:RESULT = new DecList();:} | parameter:dec paramListTail:d
 parameter 				::= IDENT:ident COLON type:typ {:RESULT = new ParDec(identleft, identright, newSym(ident), typ, false);:} |
                             REF IDENT:ident COLON type:typ {:RESULT = new ParDec(identleft, identright, newSym(ident), typ, true);:}
 	;
-paramListTail 			::= | COMMA parameter paramListTail
+paramListTail 			::= | COMMA parameter:dec paramListTail:decList
+                            {:RESULT = new DecList(dec, decList);:}
+	;
+argumentList			::= | argument:head argumentListTail:tail
+                            {:RESULT = new ExpList(head, tail);:}
+	;
+argumentListTail 		::= | COMMA argument argumentListTail
+                            {:RESULT = new ExpList(head, tail);:}
 	;
 argument 				::= expression:expr
                             {:RESULT = expr;:}
 	;
-argumentList			::= |  argumentListTail
-	;
-argumentListTail 		::= argument | argument COMMA argumentListTail
-	;
 
-vardec                  ::= VAR IDENT COLON type SEMIC
+vardec                  ::= VAR IDENT:ident COLON type:ty SEMIC {:RESULT = new VarDec(identleft, identright, ident, ty);:}
     ;
-vardecs					::= vardec vardecs |
+vardecs					::= vardec:vard vardecs:vards {:RESULT = new DecList(vard, vards);:} |
 	;
-varassign               ::= refExpression ASGN expression SEMIC
+varassign               ::= refExpression:var ASGN expression:exp SEMIC {:RESULT = new AssignStm(varleft, varright, var, exp);:}
     ;
-while_statement         ::= WHILE LPAREN expression RPAREN statement
+while_statement         ::= WHILE:whi LPAREN expression:exp RPAREN statement:stm {:RESULT = new WhileStm(whileft, whiright, exp, stm);:}
     ;   
-if_statement            ::= IF LPAREN expression RPAREN statement |
-                            IF LPAREN expression RPAREN statement ELSE statement
+if_statement            ::= IF:i LPAREN expression:exp RPAREN statement:stm
+                            {:RESULT = new IfStm(ileft, iright, exp, stm, new EmptyStm());:} |
+                            IF LPAREN expression:exp RPAREN statement:stm ELSE statement:stm2
+                            {:RESULT = new IfStm(ileft, iright, exp, stm, stm2);:}
     ;
-statement               ::= varassign | procedure_call | if_statement | while_statement | SEMIC | LCURL statements RCURL
+statement               ::= varassign | procedure_call | if_statement | while_statement | SEMIC {:RESULT = new EmptyStm();:} |
+                            LCURL statements:stms RCURL {:RESULT = new CompStm(stmsleft, stmsright, stms);:}
     ;
-statements				::= statement statements | 
+statements				::= statement:head statements:tail {:RESULT = new StmList(head, tail);:} | 
 	;
 
-refExpression 			::= IDENT | refExpression LBRACK expression RBRACK
+refExpression 			::= IDENT:ident {:RESULT = VarExp(identleft, identright, ident);:} |
+                            refExpression:ref LBRACK expression:exp RBRACK {:RESULT = ArrayVar(refleft, refright, ref, exp);:}
 	;
-expression              ::= simple_expression EQ simple_expression 
-                            {:RESULT = new OpExp(pos1, pos2, operator, op1, op2);:}
-							|
-                            simple_expression NE simple_expression |
-							simple_expression LT simple_expression |
-							simple_expression LE simple_expression |
-							simple_expression GT simple_expression |
-							simple_expression GE simple_expression |
+expression              ::= simple_expression:exp1 EQ simple_expression:exp2 
+                            {:RESULT = new OpExp(exp1left, exp1right, OpExp.EQU, exp1, exp2);:} |
+                            simple_expression:exp1 NE simple_expression:exp2
+                            {:RESULT = new OpExp(exp1left, exp1right, OpExp.NEQ, exp1, exp2);:} |
+							simple_expression:exp1 LT simple_expression:exp2
+                            {:RESULT = new OpExp(exp1left, exp1right, OpExp.LST, exp1, exp2);:} |
+							simple_expression:exp1 LE simple_expression:exp2
+                            {:RESULT = new OpExp(exp1left, exp1right, OpExp.LSE, exp1, exp2);:} |
+							simple_expression:exp1 GT simple_expression:exp2
+                            {:RESULT = new OpExp(exp1left, exp1right, OpExp.GRT, exp1, exp2);:} |
+							simple_expression:exp1 GE simple_expression:exp2
+                            {:RESULT = new OpExp(exp1left, exp1right, OpExp.GRE, exp1, exp2);:} |
 							simple_expression
     ; 
-simple_expression       ::= term | term PLUS simple_expression | term MINUS simple_expression
+simple_expression       ::= term |
+                            term:exp1 PLUS simple_expression:exp2
+                            {:RESULT = new OpExp(exp1left, exp1right, OpExp.ADD, exp1, exp2);:} |
+                            term:exp1 MINUS simple_expression:exp2
+                            {:RESULT = new OpExp(exp1left, exp1right, OpExp.SUB, exp1, exp2);:}
     ;
-term                    ::= unary | unary STAR term | unary SLASH term
+term                    ::= unary |
+                            unary:exp1 STAR term:exp2
+                            {:RESULT = new OpExp(exp1left, exp1right, OpExp.MUL, exp1, exp2);:} |
+                            unary:exp1 SLASH term:exp2
+                            {:RESULT = new OpExp(exp1left, exp1right, OpExp.DIV, exp1, exp2);:}
     ;
-unary 					::= factor | MINUS factor 
+unary 					::= factor |
+                            MINUS factor:exp2
+                            {:RESULT = new OpExp(exp2left, exp2right, OpExp.SUB, new IntExp(exp2left, exp2right, 0), exp2);:}
 	;
-factor                  ::= refExpression | number | LPAREN expression RPAREN
+factor                  ::= refExpression | INTLIT | LPAREN expression RPAREN
     ;
-number					::= INTLIT
-	;
