@@ -64,10 +64,10 @@ non terminal		Exp unary;
 non terminal		Exp factor;
 
 start with program;
-program                 ::= dec:d program:decs {:RESULT = new DecList(d, decs);:} | {:RESULT = new DecList();:}
+program                 ::= {:RESULT = new DecList();:} | dec:d program:decs {:RESULT = new DecList(d, decs);:}
     ;
-dec 			        ::= typedef:dec {: RESULT = dec; :} |
-                            procedure:dec {: RESULT = dec; :}
+dec 			        ::= typedef:dec {: RESULT = dec;:} |
+                            procedure:dec {: RESULT = dec;:}
     ;
 typedef                 ::= TYPE IDENT:ident EQ type:ty SEMIC
                             {:RESULT = new TypeDec(identleft, identright, Sym.newSym(ident.toString()), ty);:}
@@ -86,13 +86,13 @@ parameterList 			::= {:RESULT = new DecList();:} | parameter:dec paramListTail:d
 parameter 				::= IDENT:ident COLON type:typ {:RESULT = new ParDec(identleft, identright, Sym.newSym(ident.toString()), typ, false);:} |
                             REF IDENT:ident COLON type:typ {:RESULT = new ParDec(identleft, identright, Sym.newSym(ident.toString()), typ, true);:}
 	;
-paramListTail 			::= | COMMA parameter:dec paramListTail:decList
+paramListTail 			::= {:RESULT = new DecList();:}| COMMA parameter:dec paramListTail:decList
                             {:RESULT = new DecList(dec, decList);:}
 	;
-argumentList			::= | argument:head argumentListTail:tail
+argumentList			::= {:RESULT = new ExpList();:}| argument:head argumentListTail:tail
                             {:RESULT = new ExpList(head, tail);:}
 	;
-argumentListTail 		::= | COMMA argument:head argumentListTail:tail
+argumentListTail 		::= {:RESULT = new ExpList();:} | COMMA argument:head argumentListTail:tail
                             {:RESULT = new ExpList(head, tail);:}
 	;
 argument 				::= expression:expr
@@ -112,10 +112,14 @@ if_statement            ::= IF:i LPAREN expression:exp RPAREN statement:stm
                             IF:i LPAREN expression:exp RPAREN statement:stm ELSE statement:stm2
                             {:RESULT = new IfStm(ileft, iright, exp, stm, stm2);:}
     ;
-statement               ::= varassign | procedure_call | if_statement | while_statement | SEMIC:sem {:RESULT = new EmptyStm(semleft, semright);:} |
+statement               ::= varassign:stm {: RESULT = stm;:} | 
+                            procedure_call:stm {: RESULT = stm;:}  | 
+                            if_statement:stm {: RESULT = stm;:} | 
+                            while_statement:stm {: RESULT = stm;:} | 
+                            SEMIC:sem {:RESULT = new EmptyStm(semleft, semright);:} |
                             LCURL statements:stms RCURL {:RESULT = new CompStm(stmsleft, stmsright, stms);:}
     ;
-statements				::= statement:head statements:tail {:RESULT = new StmList(head, tail);:} | 
+statements				::= statement:head statements:tail {:RESULT = new StmList(head, tail);:} | {: RESULT = new StmList();:}
 	;
 
 refExpression 			::= IDENT:ident {:RESULT = new SimpleVar(identleft, identright, Sym.newSym(ident.toString()));:} |
