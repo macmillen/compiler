@@ -37,27 +37,26 @@ terminal String		IDENT;
 
 /* Non-terminals */
 
-non terminal        DecList program;
-non terminal        Dec decs;
-non terminal        Dec dec;
-non terminal	    TypeDec typedef;
 non terminal		Ty type;
-non terminal		ProcDec procedure;
-non terminal		CallStm procedure_call;
-non terminal		ParDec parameter;
+non terminal		Var refExpression;
+non terminal        DecList program;
 non terminal		DecList parameterList;
 non terminal		DecList paramListTail;
-non terminal		Exp argument;
+non terminal		DecList vardecs;
+non terminal        Dec dec;
+non terminal	    Dec typedef;
+non terminal		Dec vardec;
+non terminal		Dec procedure;
+non terminal		Dec parameter;
+non terminal		StmList statements;
+non terminal		Stm procedure_call;
+non terminal		Stm varassign;
+non terminal		Stm while_statement;
+non terminal		Stm if_statement;
+non terminal		Stm statement;
 non terminal		ExpList argumentList;
 non terminal		ExpList argumentListTail;
-non terminal		VarDec vardec;
-non terminal		VarDec vardecs;
-non terminal		AssignStm varassign;
-non terminal		WhileStm while_statement;
-non terminal		IfStm if_statement;
-non terminal		Stm statement;
-non terminal		StmList statements;
-non terminal		Exp refExpression;
+non terminal		Exp argument;
 non terminal		Exp expression;
 non terminal		Exp simple_expression;
 non terminal		Exp term;
@@ -65,29 +64,27 @@ non terminal		Exp unary;
 non terminal		Exp factor;
 
 start with program;
-program                 ::= decs:d {:RESULT = new DecList(d, new DecList());:} | {:RESULT = new DecList();:}
+program                 ::= dec:d program:decs {:RESULT = new DecList(d, decs);:} | {:RESULT = new DecList();:}
     ;
-decs                    ::= dec | dec decs
-    ;
-dec 			        ::= typedef |
-                            procedure |
+dec 			        ::= typedef:dec {: RESULT = dec; :} |
+                            procedure:dec {: RESULT = dec; :}
     ;
 typedef                 ::= TYPE IDENT:ident EQ type:ty SEMIC
-                            {:RESULT = new TypeDec(identleft, identright, newSym(ident), ty);:}
+                            {:RESULT = new TypeDec(identleft, identright, Sym.newSym(ident.toString()), ty);:}
     ;
 type                    ::= IDENT:ident 
-                            {:RESULT = new VarExp(identleft, identright, new SimpleVar(identleft, identright, newSym(ident)));:} |
-                            ARRAY LBRACK INTLIT RBRACK OF type
+                            {:RESULT = new NameTy(identleft, identright, Sym.newSym(ident.toString()));:} |
+                            ARRAY LBRACK INTLIT:intlit RBRACK OF type:ty {: RESULT = new ArrayTy(intlitleft, intlitright, intlit, ty);:}
     ;
-procedure               ::= PROC IDENT:ident {:RESULT = new ProcDec(identleft, identright, newSym(ident), params, decls, stmts);:}
-                            LPAREN parameterList:params RPAREN LCURL vardecs:decls statements:stmts RCURL
+procedure               ::= PROC IDENT:ident LPAREN parameterList:params RPAREN LCURL vardecs:decls statements:stmts RCURL
+                            {:RESULT = new ProcDec(identleft, identright, Sym.newSym(ident.toString()), params, decls, stmts);:}
     ;
-procedure_call          ::= IDENT LPAREN argumentList:expList RPAREN SEMIC {:RESULT = new CallStm(identleft, identright, newSym(ident), expList);:}
+procedure_call          ::= IDENT:ident LPAREN argumentList:expList RPAREN SEMIC {:RESULT = new CallStm(identleft, identright, Sym.newSym(ident.toString()), expList);:}
     ;
 parameterList 			::= {:RESULT = new DecList();:} | parameter:dec paramListTail:decList {:RESULT = new DecList(dec, decList);:}
 	;
-parameter 				::= IDENT:ident COLON type:typ {:RESULT = new ParDec(identleft, identright, newSym(ident), typ, false);:} |
-                            REF IDENT:ident COLON type:typ {:RESULT = new ParDec(identleft, identright, newSym(ident), typ, true);:}
+parameter 				::= IDENT:ident COLON type:typ {:RESULT = new ParDec(identleft, identright, Sym.newSym(ident.toString()), typ, false);:} |
+                            REF IDENT:ident COLON type:typ {:RESULT = new ParDec(identleft, identright, Sym.newSym(ident.toString()), typ, true);:}
 	;
 paramListTail 			::= | COMMA parameter:dec paramListTail:decList
                             {:RESULT = new DecList(dec, decList);:}
@@ -95,34 +92,34 @@ paramListTail 			::= | COMMA parameter:dec paramListTail:decList
 argumentList			::= | argument:head argumentListTail:tail
                             {:RESULT = new ExpList(head, tail);:}
 	;
-argumentListTail 		::= | COMMA argument argumentListTail
+argumentListTail 		::= | COMMA argument:head argumentListTail:tail
                             {:RESULT = new ExpList(head, tail);:}
 	;
 argument 				::= expression:expr
                             {:RESULT = expr;:}
 	;
 
-vardec                  ::= VAR IDENT:ident COLON type:ty SEMIC {:RESULT = new VarDec(identleft, identright, ident, ty);:}
+vardec                  ::= VAR IDENT:ident COLON type:ty SEMIC {:RESULT = new VarDec(identleft, identright, Sym.newSym(ident.toString()), ty);:}
     ;
-vardecs					::= vardec:vard vardecs:vards {:RESULT = new DecList(vard, vards);:} |
+vardecs					::= {:RESULT = new DecList();:} | vardec:vard vardecs:vards {:RESULT = new DecList(vard, vards);:}
 	;
 varassign               ::= refExpression:var ASGN expression:exp SEMIC {:RESULT = new AssignStm(varleft, varright, var, exp);:}
     ;
 while_statement         ::= WHILE:whi LPAREN expression:exp RPAREN statement:stm {:RESULT = new WhileStm(whileft, whiright, exp, stm);:}
     ;   
 if_statement            ::= IF:i LPAREN expression:exp RPAREN statement:stm
-                            {:RESULT = new IfStm(ileft, iright, exp, stm, new EmptyStm());:} |
-                            IF LPAREN expression:exp RPAREN statement:stm ELSE statement:stm2
+                            {:RESULT = new IfStm(ileft, iright, exp, stm, new EmptyStm(ileft, iright));:} |
+                            IF:i LPAREN expression:exp RPAREN statement:stm ELSE statement:stm2
                             {:RESULT = new IfStm(ileft, iright, exp, stm, stm2);:}
     ;
-statement               ::= varassign | procedure_call | if_statement | while_statement | SEMIC {:RESULT = new EmptyStm();:} |
+statement               ::= varassign | procedure_call | if_statement | while_statement | SEMIC:sem {:RESULT = new EmptyStm(semleft, semright);:} |
                             LCURL statements:stms RCURL {:RESULT = new CompStm(stmsleft, stmsright, stms);:}
     ;
 statements				::= statement:head statements:tail {:RESULT = new StmList(head, tail);:} | 
 	;
 
-refExpression 			::= IDENT:ident {:RESULT = VarExp(identleft, identright, ident);:} |
-                            refExpression:ref LBRACK expression:exp RBRACK {:RESULT = ArrayVar(refleft, refright, ref, exp);:}
+refExpression 			::= IDENT:ident {:RESULT = new SimpleVar(identleft, identright, Sym.newSym(ident.toString()));:} |
+                            refExpression:ref LBRACK expression:exp RBRACK {:RESULT = new ArrayVar(refleft, refright, ref, exp);:}
 	;
 expression              ::= simple_expression:exp1 EQ simple_expression:exp2 
                             {:RESULT = new OpExp(exp1left, exp1right, OpExp.EQU, exp1, exp2);:} |
@@ -136,23 +133,25 @@ expression              ::= simple_expression:exp1 EQ simple_expression:exp2
                             {:RESULT = new OpExp(exp1left, exp1right, OpExp.GRT, exp1, exp2);:} |
 							simple_expression:exp1 GE simple_expression:exp2
                             {:RESULT = new OpExp(exp1left, exp1right, OpExp.GRE, exp1, exp2);:} |
-							simple_expression
+							simple_expression:simExp {: RESULT= simExp;:}
     ; 
-simple_expression       ::= term |
+simple_expression       ::= term:texp {: RESULT= texp;:}|
                             term:exp1 PLUS simple_expression:exp2
                             {:RESULT = new OpExp(exp1left, exp1right, OpExp.ADD, exp1, exp2);:} |
                             term:exp1 MINUS simple_expression:exp2
                             {:RESULT = new OpExp(exp1left, exp1right, OpExp.SUB, exp1, exp2);:}
     ;
-term                    ::= unary |
+term                    ::= unary:uexp {: RESULT=uexp;:}|
                             unary:exp1 STAR term:exp2
                             {:RESULT = new OpExp(exp1left, exp1right, OpExp.MUL, exp1, exp2);:} |
                             unary:exp1 SLASH term:exp2
                             {:RESULT = new OpExp(exp1left, exp1right, OpExp.DIV, exp1, exp2);:}
     ;
-unary 					::= factor |
+unary 					::= factor:fexp {: RESULT = fexp;:}|
                             MINUS factor:exp2
                             {:RESULT = new OpExp(exp2left, exp2right, OpExp.SUB, new IntExp(exp2left, exp2right, 0), exp2);:}
 	;
-factor                  ::= refExpression | INTLIT | LPAREN expression RPAREN
+factor                  ::= refExpression:refExp {: RESULT= new VarExp(refExpleft, refExpright, refExp);:} | 
+                            INTLIT:intlit {: RESULT = new IntExp(intlitleft, intlitright, intlit );:}| 
+                            LPAREN expression:exp RPAREN {: RESULT = exp;:}
     ;
