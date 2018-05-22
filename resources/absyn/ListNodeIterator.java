@@ -12,16 +12,16 @@ public class ListNodeIterator implements Iterator<Absyn> {
 
 	@Override
 	public boolean hasNext() {
-		return !listNode.isEmpty;
+		return !listNode.isEmpty();
 	}
 
 	@Override
 	public Absyn next() throws NoSuchElementException {
-	    if (listNode.isEmpty)
+		if (listNode.isEmpty)
 			throw new NoSuchElementException();
 		else {
-			Absyn head = listNode.head;
-			listNode = listNode.tail;
+			Absyn head = listNode.head();
+			listNode = listNode.tail();
 			return head;
 		}
 	}

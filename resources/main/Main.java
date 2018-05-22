@@ -9,10 +9,10 @@ import java.io.*;
 import java_cup.runtime.Symbol;
 import parse.*;
 import absyn.*;
-//import table.*;
-//import semant.*;
-//import varalloc.*;
-//import codegen.*;
+import table.*;
+import semant.*;
+import varalloc.*;
+import codegen.*;
 
 
 class Main {
@@ -107,7 +107,7 @@ class Main {
 				System.out.println();
 				System.exit(0);
 			}
-/*
+
 			Table globalTable = new SemanticChecker().check(program, optionTables);
 			new VarAllocator(globalTable, optionVars).allocVars(program);
 			
@@ -124,7 +124,6 @@ class Main {
 						outFileName + "'");
 				System.exit(1);
 			}
-            */
 		} catch (FileNotFoundException e) {
 			errmsg("**** Error: cannot open input file '" +
 					inFileName + "'");

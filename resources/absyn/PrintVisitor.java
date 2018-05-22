@@ -27,15 +27,12 @@ public class PrintVisitor extends Visitor {
 	}
 
 	private static void showListElements(ListNode listNode, int indentation){
-	    boolean first = true;
-	    for (Absyn element: listNode) {
-		if (first)
-		    first=false;
-		else
-		    say(",");
-		say("\n");
-		element.show(indentation + 1);
-	    }
+		for (Absyn element: listNode) {
+			say("\n");
+			element.show(indentation + 1);
+			if (!listNode.tail().isEmpty())
+				say(",");
+		}
 	}
 	
 	public void visit(ArrayTy t){

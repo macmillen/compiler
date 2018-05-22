@@ -4,12 +4,12 @@
 
 
 package absyn;
-//import types.Type;
+import types.Type;
 
 
 public abstract class Var extends Absyn {
 
-//   public Type dataType;
+  public Type dataType;
 
 }
 

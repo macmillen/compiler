@@ -8,8 +8,8 @@ package sym;
 
 public class Sym {
 
-  private static java.util.Map<Object,Object> dict =
-    new java.util.HashMap<Object,Object>();
+  private static java.util.Map<String,Sym> dict =
+    new java.util.HashMap<String,Sym>();
   private String name;
 
   private Sym(String n) {
@@ -22,7 +22,7 @@ public class Sym {
 
   public static Sym newSym(String n) {
     String u = n.intern();
-    Sym s = (Sym) dict.get(u);
+    Sym s = dict.get(u);
     if (s == null) {
       s = new Sym(u);
       dict.put(u, s);

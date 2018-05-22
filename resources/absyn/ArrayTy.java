@@ -8,6 +8,7 @@ package absyn;
 
 public class ArrayTy extends Ty {
 
+	public int size;
 	public Ty baseTy;
 
 	public ArrayTy(int r, int c, int s, Ty t) {

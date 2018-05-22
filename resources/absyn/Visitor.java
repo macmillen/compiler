@@ -14,7 +14,7 @@ public abstract class Visitor {
     public abstract void visit(IfStm s);
     public abstract void visit(IntExp e);
     public abstract void visit(NameTy t);
-	public abstract void visit(ArrayTy t);
+    public abstract void visit(ArrayTy t);
     public abstract void visit(OpExp e);
     public abstract void visit(ParDec d);
     public abstract void visit(ProcDec d);

@@ -4,11 +4,11 @@
 
 package absyn;
 
-// import types.Type;
+import types.Type;
 
 
 public abstract class Exp extends Absyn {
 
-//   public Type dataType;
+  public Type dataType;
 
 }
