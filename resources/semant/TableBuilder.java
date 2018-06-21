@@ -7,8 +7,6 @@ import types.*;
 import java.util.Iterator;
 
 import absyn.*;
-import jdk.jfr.internal.Type;
-import sun.tools.tree.ThisExpression;
 
 class TableBuilder {
 
@@ -17,8 +15,9 @@ class TableBuilder {
 	private ParamTypeList ptList = new ParamTypeList();
 
 	Table buildSymbolTables(Absyn program, boolean showTables) {
-		TableBuilderVisitor visitor = new TabBuilderVisitor();
+		TableBuilderVisitor visitor = new TableBuilderVisitor();
 		program.accept(visitor);
+		return symTable;
 	}
     
 	private class TableBuilderVisitor extends DoNothingVisitor {

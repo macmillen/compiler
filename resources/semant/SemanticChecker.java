@@ -27,6 +27,7 @@ public class SemanticChecker {
         /* Semantische Prüfung */
 		TableBuilder tBuilder = new TableBuilder();
 		return tBuilder.buildSymbolTables(program, showTables);
+		
 
 		/* hier gibts noch was zu tun: das Meiste kann an Visitor-Objekte delegiert werden */
 	}
@@ -41,6 +42,7 @@ public class SemanticChecker {
 	}
 
 	private void checkMainProcedure(Table globalTable) {
-           /* hier gibts noch was zu tun! */
+		   /* hier gibts noch was zu tun! */
+		   
 	}
 }
