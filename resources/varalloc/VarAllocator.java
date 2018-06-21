@@ -20,6 +20,10 @@ public class VarAllocator {
 	private Table globalTable;
 	private boolean showVarAlloc;
 
+	public VarAllocator(Table t, boolean b){
+		
+	}
+
 	public void allocVars(Absyn program) {
 	}
 
