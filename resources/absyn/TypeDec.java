@@ -25,6 +25,6 @@ public class TypeDec extends Dec {
   }
 
     public void accept(Visitor v){
-	v.visit(this);
+	    v.visit(this);
     }
 }
