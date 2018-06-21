@@ -26,7 +26,8 @@ public class SemanticChecker {
 	public Table check(Absyn program, boolean showTables) {
            /* Semantische Prüfung */
 
-           /* hier gibts noch was zu tun: das Meiste kann an Visitor-Objekte delegiert werden */
+		   /* hier gibts noch was zu tun: das Meiste kann an Visitor-Objekte delegiert werden */
+		   return new Table();
 	}
 
 	static void checkClass (Object object, Class<?> expectedClass, String errorMessage, int lineNo)  {
