@@ -24,10 +24,11 @@ public class SemanticChecker {
 	static final Type boolType = new PrimitiveType("boolean", VarAllocator.BOOLBYTESIZE);
 
 	public Table check(Absyn program, boolean showTables) {
-           /* Semantische Prüfung */
+        /* Semantische Prüfung */
+		TableBuilder tBuilder = new TableBuilder();
+		return tBuilder.buildSymbolTables(program, showTables);
 
-		   /* hier gibts noch was zu tun: das Meiste kann an Visitor-Objekte delegiert werden */
-		   return new Table();
+		/* hier gibts noch was zu tun: das Meiste kann an Visitor-Objekte delegiert werden */
 	}
 
 	static void checkClass (Object object, Class<?> expectedClass, String errorMessage, int lineNo)  {
