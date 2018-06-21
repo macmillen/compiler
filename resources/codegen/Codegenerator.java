@@ -101,7 +101,7 @@ public class Codegenerator {
 			/* epilog */
 		}
 
-		public Codegenerator(Table t, int i){
+		public CodegenVisitor(Table t, int i){
 
 		}
 
