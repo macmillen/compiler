@@ -19,6 +19,7 @@ class ProcedureBodyChecker {
 	private class CheckVisitor extends DoNothingVisitor {
 
 		private Type resultType;
+		private Entry resultEntry;
 		private Table localTable;
 		private boolean isBooleanExp = false;
 
@@ -74,6 +75,7 @@ class ProcedureBodyChecker {
 			Entry e = localTable.getDeclaration(sym, "undefined variable " + simpleVar.name + " in line " + simpleVar.row);
 			SemanticChecker.checkClass(e, VarEntry.class, " is not a variable ", arrayVar.index.row);
 			resultType = ((VarEntry)e).type;
+			resultEntry = e;
 		}
 
 		/*
@@ -105,7 +107,8 @@ class ProcedureBodyChecker {
 		}
 
 		public void visit(IntExp intExp){
-			resultType = ((TypeEntry)symTable.lookup(Sym.newSym("int"))).type;
+			resultEntry = symTable.lookup(Sym.newSym("int"));
+			resultType = ((TypeEntry) resultEntry).type;
 		}
 		/*
 			assignment has different types in line ...
@@ -122,16 +125,57 @@ class ProcedureBodyChecker {
 
 		}
 		/*
-			parameter ... must be a reference parameter in line ...
 			undefined procedure ... in line ...
 			call of non-procedure ... in line ...
 			procedure ... argument ... type mismatch in line ...
 			procedure ... argument ... must be a variable in line ...
+			parameter ... must be a reference parameter in line ...
 			procedure ... called with too few arguments in line ...
 			procedure ... called with too many arguments in line ...
 		*/
 		public void visit(CallStm callStm){
+			Entry e = symTable.getDeclaration(callStm.name,
+			 "undefined procedure " + callStm.name + " in line " + callStm.row);
 			
+			SemanticChecker.checkClass(e, ProcEntry.class, "call of non-procedure " +callStm.name, callStm.row);
+			ProcEntry proc = ((ProcEntry)e);
+
+			int argumentSize = proc.paramTypes.size();
+			ListNodeIterator callStmArgs = callStm.args.iterator();
+			int index = 1;
+			for(ParamType paramTyp: proc.paramTypes){
+				if(callStmArgs.hasNext()){
+					Exp arg = callStmArgs.next();
+					arg.accept(this);
+
+					if( resultType != paramTyp.type){
+						throw new RuntimeException("procedure" + callStm.name +
+						 "argument " + index + " type mismatch in line " + callStm.row);
+					}
+					//reference or variable
+					if(paramTyp.isRef){
+						VarEntry entry = (VarEntry) resultEntry;
+						if(!entry.isRef){
+							throw new RuntimeException("parameter " + index + 
+							" must be a reference parameter in line  " + callStm.row);
+						}	
+					}else{
+						if(entry.isRef){
+							throw new RuntimeException( "argument " + index + 
+							" must be a reference parameter in line  " + callStm.row);
+						}	
+					}
+				}else{
+					throw new RuntimeException("procedure "+ callStm.name + 
+					" called with too few arguments in line " + callStm.row);
+				}	
+				index ++;
+			}
+			if(callStmArgs.hasNext()){
+				throw new RuntimeException("procedure "+ callStm.name.toString() + 
+					" called with too many arguments in line " + callStm.row);
+			}
+
 		}
 
 		/*
