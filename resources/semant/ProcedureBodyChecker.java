@@ -24,9 +24,6 @@ class ProcedureBodyChecker {
 
 
 		/*
-			procedure ’main’ is missing
-			’main’ is not a procedure
-			procedure ’main’ must not have any parameters
 			redeclaration of ... as procedure in line ...
 		*/
 		public void visit(ProcDec procDec) {
@@ -134,7 +131,7 @@ class ProcedureBodyChecker {
 			procedure ... called with too many arguments in line ...
 		*/
 		public void visit(CallStm callStm){
-
+			
 		}
 
 		/*
@@ -148,6 +145,7 @@ class ProcedureBodyChecker {
 			whileStm.body.accept(this);
 		}
 		/*
+		
 			if’ test expression must be of type boolean in line ...
 		*/
 		public void visit(IfStm ifStm){
