@@ -52,12 +52,11 @@ public class SemanticChecker {
 		procedure ’main’ is missing
 		’main’ is not a procedure
 		procedure ’main’ must not have any parameters
-		redeclaration of ... as procedure in line ...
 	*/
 	private void checkMainProcedure(Table globalTable) {
 		   /* hier gibts noch was zu tun! */
 			Entry e = globalTable.getDeclaration(Sym.newSym("main"), "procedure ‘main‘ is missing");
-			SemanticChecker.checkClass(e, ProcEntry.class, "procedure ‘main‘ is missing");
+			SemanticChecker.checkClass(e, ProcEntry.class, "‘main‘ is not a procedure");
 			ProcEntry procMain = ((ProcEntry)e);
 			if(!procMain.paramTypes.isEmpty()){
 				throw new RuntimeException("procedure ’main’ must not have any parameters");

@@ -2,9 +2,6 @@ package semant;
 
 import table.*;
 import types.*;
-
-import com.sun.org.apache.xalan.internal.xsltc.compiler.sym;
-
 import absyn.*;
 import sym.Sym;
 
@@ -16,8 +13,7 @@ undefined type ... in line ...
 
 class ProcedureBodyChecker {
 
-	private Table symTable = new Table();
-
+	
 	void check(Absyn program, Table globalTable) {
 		program.accept(new CheckVisitor(globalTable));
 	}
@@ -27,16 +23,20 @@ class ProcedureBodyChecker {
 		private Type resultType;
 		private Entry resultEntry;
 		private Table localTable;
+		private Table globalTable = new Table();
 		private boolean isBooleanExp = false;
-
+		
+		public CheckVisitor(Table globalTable){
+			this.globalTable = globalTable;
+		}
 
 		/*
 			redeclaration of ... as procedure in line ...
 		*/
 		public void visit(ProcDec procDec) {
-			Entry e = symTable.lookup(procDec.name);
+			ProcEntry e = (ProcEntry) globalTable.lookup(procDec.name);
 			if(e != null){
-				
+
 			}
 			localTable = e.localTable;
 			procDec.params.accept(this);
@@ -101,8 +101,8 @@ class ProcedureBodyChecker {
 			undefined variable ... in line ...
 		*/
 		public void visit(SimpleVar simpleVar){
-			Entry e = localTable.getDeclaration(sym, "undefined variable " + simpleVar.name + " in line " + simpleVar.row);
-			SemanticChecker.checkClass(e, VarEntry.class, " is not a variable ", arrayVar.index.row);
+			Entry e = localTable.getDeclaration(simpleVar.name, "undefined variable " + simpleVar.name + " in line " + simpleVar.row);
+			SemanticChecker.checkClass(e, VarEntry.class, " is not a variable ", simpleVar.row);
 			resultType = ((VarEntry)e).type;
 			resultEntry = e;
 		}
@@ -117,7 +117,7 @@ class ProcedureBodyChecker {
 			opExp.left.accept(this);
 			Type leftType = resultType;
 			opExp.right.accept(this);
-			SemanticChecker.checkClass(resultType, leftType.getClass(), "expression combines different types ", lineNo);
+			SemanticChecker.checkClass(resultType, leftType.getClass(), "expression combines different types ", opExp.row);
 			//Vergleichsoperatoren < 6
 			if(opExp.op < 6){
 				isBooleanExp = true;
@@ -136,7 +136,7 @@ class ProcedureBodyChecker {
 		}
 
 		public void visit(IntExp intExp){
-			resultEntry = symTable.lookup(Sym.newSym("int"));
+			resultEntry = globalTable.lookup(Sym.newSym("int"));
 			resultType = ((TypeEntry) resultEntry).type;
 		}
 		/*
@@ -149,9 +149,8 @@ class ProcedureBodyChecker {
 
 			assignStm.exp.accept(this);
 
-			SemanticChecker(resultType, varType.getClass(), "assignment has different types ", assignStm.row);
-
-			SemanticChecker(resultType, PrimitiveType.class, "assignment requires integer variable", assignStm.row);
+			SemanticChecker.checkClass(resultType, varType.getClass(), "assignment has different types ", assignStm.row);
+			SemanticChecker.checkClass(resultType, PrimitiveType.class, "assignment requires integer variable", assignStm.row);
 
 		}
 		/*
@@ -164,7 +163,7 @@ class ProcedureBodyChecker {
 			procedure ... called with too many arguments in line ...
 		*/
 		public void visit(CallStm callStm){
-			Entry e = symTable.getDeclaration(callStm.name,
+			Entry e = globalTable.getDeclaration(callStm.name,
 			 "undefined procedure " + callStm.name + " in line " + callStm.row);
 			
 			SemanticChecker.checkClass(e, ProcEntry.class, "call of non-procedure " +callStm.name, callStm.row);
@@ -175,7 +174,7 @@ class ProcedureBodyChecker {
 			int index = 1;
 			for(ParamType paramTyp: proc.paramTypes){
 				if(callStmArgs.hasNext()){
-					Exp arg = callStmArgs.next();
+					Exp arg = (Exp) callStmArgs.next();
 					arg.accept(this);
 
 					if( resultType != paramTyp.type){
@@ -183,8 +182,8 @@ class ProcedureBodyChecker {
 						 "argument " + index + " type mismatch in line " + callStm.row);
 					}
 					//reference or variable
+					VarEntry entry = (VarEntry) resultEntry;
 					if(paramTyp.isRef){
-						VarEntry entry = (VarEntry) resultEntry;
 						if(!entry.isRef){
 							throw new RuntimeException("parameter " + index + 
 							" must be a reference parameter in line  " + callStm.row);
@@ -214,7 +213,7 @@ class ProcedureBodyChecker {
 		public void visit(WhileStm whileStm){
 			whileStm.test.accept(this);
 			if(!isBooleanExp){
-				throw new RuntimeException("’while’ test expression must be of type boolean in line " + ifStm.test.row);
+				throw new RuntimeException("’while’ test expression must be of type boolean in line " + whileStm.test.row);
 			}
 			whileStm.body.accept(this);
 		}
