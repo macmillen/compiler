@@ -9,6 +9,7 @@ import sym.Sym;
 TO-DO
 undefined type ... in line ...
 ... is not a type in line ...
+parameter ... must be a reference parameter in line ...
 */
 
 class ProcedureBodyChecker {
@@ -21,7 +22,6 @@ class ProcedureBodyChecker {
 	private class CheckVisitor extends DoNothingVisitor {
 
 		private Type resultType;
-		private Entry resultEntry;
 		private Table localTable;
 		private Table globalTable = new Table();
 		private boolean isBooleanExp = false;
@@ -104,7 +104,6 @@ class ProcedureBodyChecker {
 			Entry e = localTable.getDeclaration(simpleVar.name, "undefined variable " + simpleVar.name + " in line " + simpleVar.row);
 			SemanticChecker.checkClass(e, VarEntry.class, " is not a variable ", simpleVar.row);
 			resultType = ((VarEntry)e).type;
-			resultEntry = e;
 		}
 
 		/*
@@ -121,12 +120,12 @@ class ProcedureBodyChecker {
 			//Vergleichsoperatoren < 6
 			if(opExp.op < 6){
 				isBooleanExp = true;
-				SemanticChecker.checkClass(leftType, IntExp.class, "Comparison requires integer operands ", opExp.left.row);
-				SemanticChecker.checkClass(resultType, IntExp.class, "Comparison requires integer operands ", opExp.right.row);
+				SemanticChecker.checkClass(leftType, PrimitiveType.class, "Comparison requires integer operands ", opExp.left.row);
+				SemanticChecker.checkClass(resultType, PrimitiveType.class, "Comparison requires integer operands ", opExp.right.row);
 			}else{
 				isBooleanExp = false;
-				SemanticChecker.checkClass(leftType, IntExp.class, "arithmetic operation requires integer operands ", opExp.left.row);
-				SemanticChecker.checkClass(resultType, IntExp.class, "arithmetic operation requires integer operands ", opExp.right.row);
+				SemanticChecker.checkClass(leftType, PrimitiveType.class, "arithmetic operation requires integer operands ", opExp.left.row);
+				SemanticChecker.checkClass(resultType, PrimitiveType.class, "arithmetic operation requires integer operands ", opExp.right.row);
 			}
 		}
 
@@ -136,8 +135,7 @@ class ProcedureBodyChecker {
 		}
 
 		public void visit(IntExp intExp){
-			resultEntry = globalTable.lookup(Sym.newSym("int"));
-			resultType = ((TypeEntry) resultEntry).type;
+			resultType = ((TypeEntry) globalTable.lookup(Sym.newSym("int"))).type;
 		}
 		/*
 			assignment has different types in line ...
@@ -158,7 +156,6 @@ class ProcedureBodyChecker {
 			call of non-procedure ... in line ...
 			procedure ... argument ... type mismatch in line ...
 			procedure ... argument ... must be a variable in line ...
-			parameter ... must be a reference parameter in line ...
 			procedure ... called with too few arguments in line ...
 			procedure ... called with too many arguments in line ...
 		*/
@@ -169,7 +166,6 @@ class ProcedureBodyChecker {
 			SemanticChecker.checkClass(e, ProcEntry.class, "call of non-procedure " +callStm.name, callStm.row);
 			ProcEntry proc = ((ProcEntry)e);
 
-			int argumentSize = proc.paramTypes.size();
 			ListNodeIterator callStmArgs = callStm.args.iterator();
 			int index = 1;
 			for(ParamType paramTyp: proc.paramTypes){
@@ -182,18 +178,11 @@ class ProcedureBodyChecker {
 						 "argument " + index + " type mismatch in line " + callStm.row);
 					}
 					//reference or variable
-					VarEntry entry = (VarEntry) resultEntry;
 					if(paramTyp.isRef){
-						if(!entry.isRef){
-							throw new RuntimeException("parameter " + index + 
-							" must be a reference parameter in line  " + callStm.row);
-						}	
-					}else{
-						if(entry.isRef){
-							throw new RuntimeException( "argument " + index + 
-							" must be a reference parameter in line  " + callStm.row);
-						}	
+						SemanticChecker.checkClass(arg, VarExp.class,"procedure " + callStm.name + " argument " + index + 
+						" must be a must be a variable ", callStm.row);
 					}
+
 				}else{
 					throw new RuntimeException("procedure "+ callStm.name + 
 					" called with too few arguments in line " + callStm.row);
