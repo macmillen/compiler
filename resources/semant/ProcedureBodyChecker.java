@@ -8,6 +8,12 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.sym;
 import absyn.*;
 import sym.Sym;
 
+/*
+TO-DO
+undefined type ... in line ...
+... is not a type in line ...
+*/
+
 class ProcedureBodyChecker {
 
 	private Table symTable = new Table();
@@ -28,10 +34,33 @@ class ProcedureBodyChecker {
 			redeclaration of ... as procedure in line ...
 		*/
 		public void visit(ProcDec procDec) {
-			localTable = ((ProcEntry)symTable.lookup(procDec.name)).localTable;
+			Entry e = symTable.lookup(procDec.name);
+			if(e != null){
+				
+			}
+			localTable = e.localTable;
 			procDec.params.accept(this);
 			procDec.decls.accept(this);
 			procDec.body.accept(this);
+		}
+
+		/*
+			redeclaration of ... as variable in line ...
+		*/
+		public void visit(VarDec varDec){
+
+		}
+		/*
+			redeclaration of ... as parameter in line ...
+		*/
+		public void visit(ParDec parDec){
+
+		}
+		/*
+			redeclaration of ... as type in line ...
+		*/
+		public void visit(TypeDec typeDec){
+
 		}
 
 		public void visit(CompStm node) {
@@ -122,6 +151,7 @@ class ProcedureBodyChecker {
 
 			SemanticChecker(resultType, varType.getClass(), "assignment has different types ", assignStm.row);
 
+			SemanticChecker(resultType, PrimitiveType.class, "assignment requires integer variable", assignStm.row);
 
 		}
 		/*
