@@ -105,5 +105,21 @@ public class Codegenerator {
 
 		}
 
+    public void visit(DecList decList){
+			for(Absyn dec: decList){
+				dec.accept(this);
+			}
+		}
+
+    public void visit(StmList stmList){
+			for(Absyn stm: stmList){
+				stm.accept(this);
+			}
+		}
+
+    public void visit(IntExp intExp){
+      // emitRRI("add",,,intExp.val);
+    }
+
 	}
 }
