@@ -40,7 +40,6 @@ public class VarAllocator {
 		private Table globalTable;
 		private int areaSize = 0;
 		private int offset = 0;
-		private int index = 0;
 
 		public VarAllocatorVisitorHead(Table globalTable){
 			this.globalTable = globalTable;
@@ -49,10 +48,8 @@ public class VarAllocator {
 
 		public void visit(DecList decList){
 			areaSize = 0;
-			index = 0;
 			for(Absyn dec: decList){
 				dec.accept(this);
-				index++;
 			}
 		}
 
@@ -70,9 +67,7 @@ public class VarAllocator {
 			areaSize = 0;
 			procDec.params.accept(this);
 			procEntry.argumentAreaSize = areaSize;
-			if(showVarAlloc){
-				System.out.println("size of argument area = " + procEntry.argumentAreaSize);
-			}
+			
 
 
 			//Lokale Variablen
@@ -80,10 +75,7 @@ public class VarAllocator {
 			areaSize = 0;
 			procDec.decls.accept(this);
 			procEntry.localvarAreaSize = areaSize;
-			if(showVarAlloc){
-				System.out.println("size of localvar area = " + procEntry.localvarAreaSize);
-				System.out.println("size of outgoing area = " + procEntry.outgoingAreaSize);
-			}
+			
 		}
 
 
@@ -99,10 +91,6 @@ public class VarAllocator {
 				areaSize += parEntry.type.byteSize;
 			}
 
-			if(showVarAlloc){
-				System.out.println("param '" + parDec.name  +  "': sp + " + parEntry.offset);
-			}
-
 		}
 
 		public void visit(VarDec varDec){
@@ -110,9 +98,7 @@ public class VarAllocator {
 			offset = offset + varEntry.type.byteSize;
 			varEntry.offset = offset;
 			areaSize += varEntry.type.byteSize;
-			if(showVarAlloc){
-				System.out.println("var '" + varDec.name + "': fp - " + varEntry.offset);
-			}
+		
 		}
 	}
 
@@ -120,28 +106,48 @@ public class VarAllocator {
 
 		private int maxAreaSize = 0;
 		private Table globalTable;
+		private ProcEntry procEntry;
 
 		public VarAllocatorVisitorBody(Table globalTable){
 			this.globalTable = globalTable;
 		}
 
 		public void visit(ProcDec procDec){
-			ProcEntry procEntry = (ProcEntry)globalTable.lookup(procDec.name);
-			
-			for(Stm stm: procDec.body){
-				if(stm instanceof CallStm){
-					CallStm callStm = (CallStm) stm;
-					ProcEntry callee = (ProcEntry)globalTable.lookup(callStm.name);
-					if(maxAreaSize < callee.localvarAreaSize){
-						procEntry.outgoingAreaSize =callee.localvarAreaSize;
-					}
-				}
+			procEntry = (ProcEntry)globalTable.lookup(procDec.name);
+			procDec.body.accept(this);
+		}
+
+		public void visit(CallStm callStm){
+			ProcEntry callee = (ProcEntry)globalTable.lookup(callStm.name);
+			if(maxAreaSize < callee.argumentAreaSize){
+				procEntry.outgoingAreaSize = callee.argumentAreaSize;
 			}
+		}
+
+		//Body Statments
+
+		public void visit(IfStm ifStm){
+			ifStm.thenPart.accept(this);
+			ifStm.elsePart.accept(this);
+		}
+
+		public void visit(WhileStm whileStm){
+			whileStm.body.accept(this);
+		}
+
+		public void visit(CompStm compStm){
+			compStm.stms.accept(this);
 		}
 
 		public void visit(DecList decList){
 			for(Absyn dec: decList){
 				dec.accept(this);
+			}
+		}
+
+		public void visit(StmList stmList){
+			for(Absyn stm: stmList){
+				stm.accept(this);
 			}
 		}
 	
@@ -151,6 +157,8 @@ public class VarAllocator {
 	private class VarAllocatorVisitorPrint extends DoNothingVisitor{
 
 		private Table globalTable;
+		private int index = 0;
+		private boolean printArguments = true;
 
 		public VarAllocatorVisitorPrint(Table globalTable){
 			this.globalTable = globalTable;
@@ -165,8 +173,12 @@ public class VarAllocator {
 			localTable = procEntry.localTable;
 
 			//Parameter und Argumente
+			printArguments = true;
 			procDec.params.accept(this);
 			System.out.println("size of argument area = " + procEntry.argumentAreaSize);
+			printArguments = false;
+			procDec.params.accept(this);
+			
 
 			//Lokale Variablen
 			procDec.decls.accept(this);
@@ -175,14 +187,20 @@ public class VarAllocator {
 		}
 
 		public void visit(DecList decList){
+			index = 0;
 			for(Absyn dec: decList){
+				index ++;
 				dec.accept(this);
 			}
 		}
 
 		public void visit(ParDec parDec){
 			VarEntry parEntry = (VarEntry) localTable.lookup(parDec.name);
-			System.out.println("param '" + parDec.name  +  "': sp + " + parEntry.offset);
+			if(printArguments){
+				System.out.println("arg " + index + ": sp + " + parEntry.offset);
+			}else{
+				System.out.println("param '" + parDec.name  +  "': sp + " + parEntry.offset);
+			}
 		}
 
 		public void visit(VarDec varDec){
