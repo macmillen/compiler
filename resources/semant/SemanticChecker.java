@@ -12,7 +12,7 @@ import java.lang.Class;
 import javax.management.RuntimeErrorException;
 
 /**
- * A SemanticChecker object defines a method "check" for semantic 
+ * A SemanticChecker object defines a method "check" for semantic
  * analysis and symbol table construction for SPL
  * <br>
  * SemanticChecker is a singleton class
