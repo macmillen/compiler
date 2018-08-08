@@ -44,24 +44,6 @@ class ProcedureBodyChecker {
 			procDec.body.accept(this);
 		}
 
-		/*
-			redeclaration of ... as variable in line ...
-		*/
-		public void visit(VarDec varDec){
-
-		}
-		/*
-			redeclaration of ... as parameter in line ...
-		*/
-		public void visit(ParDec parDec){
-
-		}
-		/*
-			redeclaration of ... as type in line ...
-		*/
-		public void visit(TypeDec typeDec){
-
-		}
 
 		public void visit(CompStm node) {
 			node.stms.accept(this);

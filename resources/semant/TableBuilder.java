@@ -51,8 +51,14 @@ class TableBuilder {
 		public void visit(NameTy node) {
 			Entry type = symTable.lookup(node.name);
 
+			if(type == null){
+				throw new RuntimeException("undefined type " + node.name + " in line " + node.row);
+			}
+
 			if(type instanceof TypeEntry){
 				resultType = ((TypeEntry)type).type;
+			}else{
+				throw new RuntimeException(node.name + " is not a type in line " + node.row);
 			}
 		}
 

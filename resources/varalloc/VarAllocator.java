@@ -20,6 +20,8 @@ public class VarAllocator {
 	private Table globalTable;
 	private Table localTable;
 	private boolean showVarAlloc;
+	private int areaSize = 0;
+	private int offset = 0;
 	
 
 	public VarAllocator(Table t, boolean b){
@@ -28,18 +30,32 @@ public class VarAllocator {
 	}
 
 	public void allocVars(Absyn program) {
+
+		// Set Bibliotheksprozeduren
+		bibProc((ProcEntry) globalTable.lookup(Sym.newSym("printi")));
+		bibProc((ProcEntry) globalTable.lookup(Sym.newSym("printc")));
+		bibProc((ProcEntry) globalTable.lookup(Sym.newSym("readi")));
+		bibProc((ProcEntry) globalTable.lookup(Sym.newSym("readc")));
+		bibProc((ProcEntry) globalTable.lookup(Sym.newSym("exit")));
+		bibProc((ProcEntry) globalTable.lookup(Sym.newSym("time")));
+		bibProc((ProcEntry) globalTable.lookup(Sym.newSym("clearAll")));
+		bibProc((ProcEntry) globalTable.lookup(Sym.newSym("setPixel")));
+		bibProc((ProcEntry) globalTable.lookup(Sym.newSym("drawLine")));
+		bibProc((ProcEntry) globalTable.lookup(Sym.newSym("drawCircle")));
+		
+		
 		program.accept(new VarAllocatorVisitorHead(globalTable));
 		program.accept(new VarAllocatorVisitorBody(globalTable));
 		if(showVarAlloc){
 			program.accept(new VarAllocatorVisitorPrint(globalTable));
 		}
+
 	}
 
 	private class VarAllocatorVisitorHead extends DoNothingVisitor{
 		
 		private Table globalTable;
-		private int areaSize = 0;
-		private int offset = 0;
+		
 
 		public VarAllocatorVisitorHead(Table globalTable){
 			this.globalTable = globalTable;
@@ -55,8 +71,6 @@ public class VarAllocator {
 
 		public void visit(ProcDec procDec){
 
-			
-			
 			ProcEntry procEntry = (ProcEntry)globalTable.lookup(procDec.name);
 
 			localTable = procEntry.localTable;
@@ -207,6 +221,25 @@ public class VarAllocator {
 			VarEntry varEntry = (VarEntry) localTable.lookup(varDec.name);
 			System.out.println("var '" + varDec.name + "': fp - " + varEntry.offset);
 		}
+	}
+
+
+	public void bibProc(ProcEntry procEntry){
+		areaSize = 0;
+
+		for(ParamType paramType: procEntry.paramTypes){
+			if(paramType.isRef){
+				paramType.offset = offset;
+				offset = offset + VarAllocator.REFBYTESIZE;
+				areaSize += VarAllocator.REFBYTESIZE;
+			}else{
+				paramType.offset = offset;
+				offset = offset + paramType.type.byteSize;
+				areaSize += paramType.type.byteSize;
+			}
+		}
+		procEntry.argumentAreaSize = areaSize;
+
 	}
 }
 
