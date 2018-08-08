@@ -28,17 +28,21 @@ public class VarAllocator {
 	}
 
 	public void allocVars(Absyn program) {
-		program.accept(new VarAllocatorVisitor(globalTable));
+		program.accept(new VarAllocatorVisitorHead(globalTable));
+		program.accept(new VarAllocatorVisitorBody(globalTable));
+		if(showVarAlloc){
+			program.accept(new VarAllocatorVisitorPrint(globalTable));
+		}
 	}
 
-	private class VarAllocatorVisitor extends DoNothingVisitor{
+	private class VarAllocatorVisitorHead extends DoNothingVisitor{
 		
 		private Table globalTable;
 		private int areaSize = 0;
 		private int offset = 0;
 		private int index = 0;
 
-		public VarAllocatorVisitor(Table globalTable){
+		public VarAllocatorVisitorHead(Table globalTable){
 			this.globalTable = globalTable;
 		}
 
@@ -54,21 +58,13 @@ public class VarAllocator {
 
 		public void visit(ProcDec procDec){
 
-			if(showVarAlloc){
-				System.out.println(" \nVariable allocation for procedure ‘" + procDec.name + "‘");
-			}
+			
 			
 			ProcEntry procEntry = (ProcEntry)globalTable.lookup(procDec.name);
 
 			localTable = procEntry.localTable;
 
-			// Aufrufe
-			/*
-			offset = 0;
-			areaSize = 0;
-			procDec.body.accept(this);
-			procEntry
-			*/
+			
 			//Parameter
 			offset = 0;
 			areaSize = 0;
@@ -86,17 +82,8 @@ public class VarAllocator {
 			procEntry.localvarAreaSize = areaSize;
 			if(showVarAlloc){
 				System.out.println("size of localvar area = " + procEntry.localvarAreaSize);
+				System.out.println("size of outgoing area = " + procEntry.outgoingAreaSize);
 			}
-			
-
-		}
-
-
-		// Outgoing AreaSize
-		public void visit(CallStm callStm){
-
-			ProcEntry procEntry = (ProcEntry) globalTable.lookup(callStm.name);
-
 		}
 
 
@@ -127,9 +114,81 @@ public class VarAllocator {
 				System.out.println("var '" + varDec.name + "': fp - " + varEntry.offset);
 			}
 		}
+	}
 
+	public class VarAllocatorVisitorBody extends DoNothingVisitor{
+
+		private int maxAreaSize = 0;
+		private Table globalTable;
+
+		public VarAllocatorVisitorBody(Table globalTable){
+			this.globalTable = globalTable;
+		}
+
+		public void visit(ProcDec procDec){
+			ProcEntry procEntry = (ProcEntry)globalTable.lookup(procDec.name);
+			
+			for(Stm stm: procDec.body){
+				if(stm instanceof CallStm){
+					CallStm callStm = (CallStm) stm;
+					ProcEntry callee = (ProcEntry)globalTable.lookup(callStm.name);
+					if(maxAreaSize < callee.localvarAreaSize){
+						procEntry.outgoingAreaSize =callee.localvarAreaSize;
+					}
+				}
+			}
+		}
+
+		public void visit(DecList decList){
+			for(Absyn dec: decList){
+				dec.accept(this);
+			}
+		}
+	
+	}
+
+
+	private class VarAllocatorVisitorPrint extends DoNothingVisitor{
+
+		private Table globalTable;
+
+		public VarAllocatorVisitorPrint(Table globalTable){
+			this.globalTable = globalTable;
+		}
+
+		public void visit(ProcDec procDec){
+			ProcEntry procEntry = (ProcEntry)globalTable.lookup(procDec.name);
+			
+			System.out.println(" \nVariable allocation for procedure ‘" + procDec.name + "‘");
 		
 
+			localTable = procEntry.localTable;
+
+			//Parameter und Argumente
+			procDec.params.accept(this);
+			System.out.println("size of argument area = " + procEntry.argumentAreaSize);
+
+			//Lokale Variablen
+			procDec.decls.accept(this);
+			System.out.println("size of localvar area = " + procEntry.localvarAreaSize);
+			System.out.println("size of outgoing area = " + procEntry.outgoingAreaSize);
+		}
+
+		public void visit(DecList decList){
+			for(Absyn dec: decList){
+				dec.accept(this);
+			}
+		}
+
+		public void visit(ParDec parDec){
+			VarEntry parEntry = (VarEntry) localTable.lookup(parDec.name);
+			System.out.println("param '" + parDec.name  +  "': sp + " + parEntry.offset);
+		}
+
+		public void visit(VarDec varDec){
+			VarEntry varEntry = (VarEntry) localTable.lookup(varDec.name);
+			System.out.println("var '" + varDec.name + "': fp - " + varEntry.offset);
+		}
 	}
 }
 

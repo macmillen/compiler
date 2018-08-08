@@ -37,6 +37,12 @@ class TableBuilder {
 		}
 
 		public void visit(TypeDec node) {
+
+			Entry e = symTable.lookup(node.name);
+			if(e != null){
+				throw new RuntimeException("redeclaration of " + node.name + " as type in line " + node.row);
+			}
+
 			node.ty.accept(this);
 			symTable.enter(node.name, new TypeEntry(resultType));
 		}
@@ -58,6 +64,12 @@ class TableBuilder {
 		public void visit(ProcDec node) {
 			ptList = new ParamTypeList();
 
+			
+			Entry e = symTable.lookup(node.name);
+			if (e != null){
+				throw new RuntimeException("redeclaration of " + node.name + " as procedure in line " + node.row);
+			}
+			
 			Table globalTable = symTable;
 			Table localTable = new Table(symTable);
 			symTable = localTable;
@@ -75,12 +87,24 @@ class TableBuilder {
 		}
 
 		public void visit(ParDec node) {
+
+			Entry e = symTable.lookup(node.name);
+			if(e != null){
+				throw new RuntimeException("redeclaration of " + node.name + " as parameter in line " + node.row);
+			}
+
 			node.ty.accept(this);
 			ptList.add(new ParamType(resultType, node.isRef));
 			symTable.enter(node.name, new VarEntry(resultType, node.isRef));
 		}
 
 		public void visit(VarDec node) {
+
+			Entry e = symTable.lookup(node.name);
+			if(e != null){
+				throw new RuntimeException("redeclaration of " + node.name + " as variable in line " + node.row);
+			}
+
 			node.ty.accept(this);
 			symTable.enter(node.name, new VarEntry(resultType, false));
 		}
