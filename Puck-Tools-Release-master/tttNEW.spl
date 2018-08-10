@@ -1,0 +1,15 @@
+//type a = array[10] of int;
+
+proc main() {
+  //var x: a;
+  var i: int;
+  i := 1 + 4/2;
+  //i := i+1;
+
+  //x[1] := 5;
+  andere(3,4);
+}
+
+proc andere(a: int, i: int) {
+
+}

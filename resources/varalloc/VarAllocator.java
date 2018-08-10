@@ -135,7 +135,8 @@ public class VarAllocator {
 			ProcEntry callee = (ProcEntry)globalTable.lookup(callStm.name);
 			if(maxAreaSize < callee.argumentAreaSize){
 				procEntry.outgoingAreaSize = callee.argumentAreaSize;
-			}
+      }
+      procEntry.isCaller = true;
 		}
 
 		//Body Statments

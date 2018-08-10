@@ -1,0 +1,13 @@
+
+
+// t1
+cd resources
+make dist-clean
+make
+./spl ../Puck-Tools-Release-master/tttNEW.spl ttt.asm
+// t2
+cd Puck-Tools-Release-master/
+java -jar spl.jar -i tttNEW.spl -o tttNEW.asm
+// t3
+cd spl_saturn/common/
+./spl --absyn ../../Puck-Tools-Release-master/tttNEW.spl ../../Puck-Tools-Release-master/tttNEW.asm

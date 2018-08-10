@@ -1,16 +1,5 @@
 
 proc main() {
   var i: int;
-  i := 3+2;
-  andere();
-}
-
-proc andere() {
-  var i: int;
-  var a: int;
-  i := 3+5;
-  a := 0;
-  while(a < i) {
-    a:=a+1;
-  }
+  i := 1;
 }

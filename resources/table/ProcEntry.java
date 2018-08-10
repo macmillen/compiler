@@ -10,6 +10,7 @@ import types.*;
 
 public class ProcEntry extends Entry {
 
+  public boolean isCaller = false;
   public ParamTypeList paramTypes;
   public Table localTable;
   public int argumentAreaSize;	/* filled in by variable allocator */

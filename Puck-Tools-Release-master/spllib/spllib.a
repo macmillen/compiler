@@ -1,0 +1,92 @@
+.object spllib
+
+.export printi
+.export printc
+.export readi
+.export readc
+.export exit
+.export indexError
+
+indexError:
+SETW $1 91
+OUTC $1
+SETW $1 101
+OUTC $1
+SETW $1 114
+OUTC $1
+SETW $1 114
+OUTC $1
+SETW $1 111
+OUTC $1
+SETW $1 114
+OUTC $1
+SETW $1 93
+OUTC $1
+SETW $1 32
+OUTC $1
+SETW $1 105
+OUTC $1
+SETW $1 110
+OUTC $1
+SETW $1 100
+OUTC $1
+SETW $1 101
+OUTC $1
+SETW $1 120
+OUTC $1
+SETW $1 32
+OUTC $1
+SETW $1 111
+OUTC $1
+SETW $1 117
+OUTC $1
+SETW $1 116
+OUTC $1
+SETW $1 32
+OUTC $1
+SETW $1 111
+OUTC $1
+SETW $1 102
+OUTC $1
+SETW $1 32
+OUTC $1
+SETW $1 98
+OUTC $1
+SETW $1 111
+OUTC $1
+SETW $1 117
+OUTC $1
+SETW $1 110
+OUTC $1
+SETW $1 100
+OUTC $1
+SETW $1 115
+OUTC $1
+SETW $1 10
+OUTC $1
+HALT
+
+printi:
+LDW $1 $31
+OUTI $1
+JMPR $30
+
+printc:
+LDW $1 $31
+OUTC $1
+JMPR $30
+
+readi:
+INI $1
+LDW $2 $31
+STW $1 $2
+JMPR $30
+
+readc:
+INC $1
+LDW $2 $31
+STW $1 $2
+JMPR $30
+
+exit:
+HALT
