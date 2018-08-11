@@ -9,117 +9,48 @@
 .executable main
 main:
 ; procedure prologue
-; allocate space for local variables (44 bytes)
-SUBC $31 $31 44
 ; save old frame pointer (4 bytes)
 SUBC $31 $31 4
 STW $29 $31
 ; set new frame pointer
-ADDC $29 $31 48
+ADDC $29 $31 4
 ; save return register (main calls at least one procedure in its body)
 SUBC $31 $31 4
 STW $30 $31
-; allocate space for outgoing arguments (0 bytes)
-SUBC $31 $31 0
+; allocate space for outgoing arguments (4 bytes)
+SUBC $31 $31 4
 ; procedure body
-SUBC $1 $29 40
-; generating index
-SETW $2 0
-; boundary check
-SETW $3 10
-LTU $3 $2 $3
-BRF $3 indexError
-SETW $3 4
-MULU $2 $2 $3
-ADD $1 $1 $2
-SETW $2 1
-STW $2 $1
-SUBC $1 $29 40
-; generating index
-SETW $2 11
-; boundary check
-SETW $3 10
-LTU $3 $2 $3
-BRF $3 indexError
-SETW $3 4
-MULU $2 $2 $3
-ADD $1 $1 $2
-SETW $2 1
-STW $2 $1
-SUBC $1 $29 44
-SETW $2 0
-STW $2 $1
-JMP l0
-l1: 
-SUBC $1 $29 44
-LDW $1 $1
-SETW $2 2
-LTI $1 $1 $2
-BRF $1 l2
-SUBC $1 $29 44
-SUBC $2 $29 44
-LDW $2 $2
-SETW $3 1
-ADD $2 $2 $3
-STW $2 $1
-l2:
-l0:
-SETW $1 2
-SETW $2 3
-LTI $1 $1 $2
-BRT $1 l1
-SUBC $1 $29 40
-; generating index
-SETW $2 1
-; boundary check
-SETW $3 10
-LTU $3 $2 $3
-BRF $3 indexError
-SETW $3 4
-MULU $2 $2 $3
-ADD $1 $1 $2
-SETW $2 5
-STW $2 $1
+; storing argument #0 for procedure andere
+SETW $1 5
+SUBC $29 $29 12
+STW $1 $29
+ADDC $29 $29 12
 ; call procedure andere
 CALL $30 andere
 ; procedure epilogue
 ; restore return register
-ADDC $31 $31 0
+ADDC $31 $31 4
 LDW $30 $31
 ADDC $31 $31 4
 ; restore old frame pointer
 LDW $29 $31
-ADDC $31 $31 48
+ADDC $31 $31 4
 ; return to caller
 JMPR $30
 
 
 andere:
 ; procedure prologue
-; allocate space for local variables (40 bytes)
-SUBC $31 $31 40
 ; save old frame pointer (4 bytes)
 SUBC $31 $31 4
 STW $29 $31
 ; set new frame pointer
-ADDC $29 $31 44
+ADDC $29 $31 4
 ; procedure body
-SUBC $1 $29 40
-; generating index
-SETW $2 0
-; boundary check
-SETW $3 10
-LTU $3 $2 $3
-BRF $3 indexError
-SETW $3 4
-MULU $2 $2 $3
-ADD $1 $1 $2
-SETW $2 4
-STW $2 $1
 ; procedure epilogue
 ; restore old frame pointer
 LDW $29 $31
-ADDC $31 $31 44
+ADDC $31 $31 4
 ; return to caller
 JMPR $30
 

@@ -24,7 +24,7 @@ public class Codegenerator {
   int imm = -99;
   Type arrayType;
   int areaSize = 0;
-  boolean arguments = false;
+  boolean arguments = true;
   String procName = "";
   boolean isRef = false;
   String fn = "";
@@ -33,6 +33,7 @@ public class Codegenerator {
   int comparison;
   int jumpCounter = 0;
   boolean elseBlock = false;
+  boolean isCalling = true;
 
 	public Codegenerator (FileWriter writer) {
     output = new PrintWriter(writer);
@@ -119,7 +120,7 @@ public class Codegenerator {
 
 	public class CodegenVisitor extends DoNothingVisitor {
 
-    public void visit(ProcDec node) { // 2x
+    public void visit(ProcDec node) {
       ProcEntry procEntry = (ProcEntry) globalTable.lookup(node.name);
       localTable = procEntry.localTable;
 
@@ -128,6 +129,7 @@ public class Codegenerator {
       int localvarAreaSize = procEntry.localvarAreaSize;
       int argumentAreaSize = procEntry.argumentAreaSize;
       boolean isMainMethod = node.name.toString().equals("main");
+      paramsOffset = localvarAreaSize;
 
       emit(node.name.toString() + ":");
       emit("; procedure prologue");
@@ -148,13 +150,11 @@ public class Codegenerator {
         emit("; save return register (main calls at least one procedure in its body)");
         emitRRI("SUBC", SP, SP, 4);
         emitRR("STW", RETR, SP);
-        paramsOffset += 4;
       }
 
-      if(outgoingAreaSize > 0 || isMainMethod) {
+      if(/*outgoingAreaSize > 0*/ isCalling && outgoingAreaSize > 0) {
         emit("; allocate space for outgoing arguments (" + outgoingAreaSize + " bytes)");
         emitRRI("SUBC", SP, SP, outgoingAreaSize);
-        paramsOffset += outgoingAreaSize;
       }
 
 			/* get symbol table entry for this procedure */
@@ -162,23 +162,22 @@ public class Codegenerator {
 			/* prolog */
       
       /* epilog */
-      System.out.println("procDec - params");
       node.params.accept(this);
 
-      System.out.println("procDec - decls");
       node.decls.accept(this);
 
       emit("; procedure body");
-      System.out.println("procDec - body");
       node.body.accept(this);
 
       emit("; procedure epilogue");
 
-      if(outgoingAreaSize > 0 || isMainMethod) {
+      // if(outgoingAreaSize > 0) {
+      if(isCalling && outgoingAreaSize > 0) {
         emit("; restore return register");
         emitRRI("ADDC", SP, SP, outgoingAreaSize);
         emitRR("LDW", RETR, SP);
         emitRRI("ADDC", SP, SP, 4);
+        isCalling = false;
       }
 
       emit("; restore old frame pointer");
@@ -189,7 +188,6 @@ public class Codegenerator {
       emit("\n");
       // wenn outgoingareasize dann return wieder
       // herstellen
-      // (localAreaSize + 4)
 		}
 
 		public CodegenVisitor(Table t, int i){
@@ -201,7 +199,6 @@ public class Codegenerator {
     }
       
     public void visit(CallStm callStm){
-      System.out.println("callStm");
       ProcEntry p = (ProcEntry)globalTable.lookup(callStm.name);
       if(p.argumentAreaSize == 0) {
         arguments = false;
@@ -210,31 +207,29 @@ public class Codegenerator {
       callStm.args.accept(this);
       emit("; call procedure " + callStm.name.toString());
       emitRS("CALL", RETR, callStm.name.toString());
-      // emitRRI("SUBC", FP, FP, areaSize);
+      isCalling = true;
+      arguments = true;
     }
 
     public void visit(ExpList expList){
-      System.out.println("expList");
       areaSize = 0;
       int index = 0;
       for(Absyn exp: expList){
         if(arguments) {
           emit("; storing argument #" + index + " for procedure " + procName);
         }
+        exp.accept(this);
         if(arguments) {
           if(isRef) {
             // emitRRI("SUBC", reg1, reg2, value);
           } else {
             // emitRR("SETW", FP, reg2);
           }
-          System.out.println(outgoingParams);
-          System.out.println(paramsOffset);
           outgoingParams--;
-          emitRRI("SUBC", FP, FP, 4 * outgoingParams + paramsOffset);
+          emitRRI("SUBC", FP, FP, 12 + 4 * outgoingParams + paramsOffset);
           emitRR("STW", rsp, FP);
-          emitRRI("ADDC", FP, FP, 4 * outgoingParams + paramsOffset);
+          emitRRI("ADDC", FP, FP, 12 + 4 * outgoingParams + paramsOffset);
         } else {
-          exp.accept(this);
         }
         index++;
         areaSize += 4;
@@ -243,14 +238,12 @@ public class Codegenerator {
     }
 
     public void visit(DecList decList){ // 1x
-      System.out.println("decList");
 			for(Absyn dec: decList){
         dec.accept(this);
 			}
 		}
 
     public void visit(StmList stmList){
-      System.out.println("stmList");
 			for(Absyn stm: stmList){
 				stm.accept(this);
 			}
@@ -259,23 +252,22 @@ public class Codegenerator {
     public void visit(ArrayVar arrayVar){
       arrayVar.var.accept(this);
       int bytesize = ((ArrayType)arrayType).baseType.byteSize;
+      emit("; generating index");
       arrayVar.index.accept(this);
       int arrayLength = ((ArrayType)arrayType).size;
-      emit("; generating index");
-      emitRI("SETW", ++rsp, arrayLength);
       emit("; boundary check");
-      emitRRR("LTI", rsp, rsp - 1, rsp);
+      emitRI("SETW", ++rsp, arrayLength);
+      emitRRR("LTU", rsp, rsp - 1, rsp);
       emitRS("BRF", rsp--, "indexError");
       emitRI("SETW", ++rsp, bytesize);
-      emitRRI("MULTI", rsp - 1, rsp - 1, rsp--);
-      emitRRI("ADD", rsp - 1, rsp - 1, rsp--);
+      emitRRR("MULU", rsp - 1, rsp - 1, rsp--);
+      emitRRR("ADD", rsp - 1, rsp - 1, rsp--);
 
       // bei arrayAccess in arrayaAccess
       // arrayType = arrayType.basetype
     }
     
     public void visit(SimpleVar simpleVar){
-      System.out.println("simpleVar");
       VarEntry varEntry = (VarEntry)localTable.lookup(simpleVar.name);
 
       if(varEntry.type instanceof ArrayType) {
@@ -287,13 +279,11 @@ public class Codegenerator {
     }
     
     public void visit(VarExp varExp){
-      System.out.println("varExp");
       varExp.var.accept(this);
       emitRR("LDW", rsp, rsp);
     }
 
     public void visit(AssignStm assignStm){
-      System.out.println("assignStm");
       assignStm.var.accept(this);
       assignStm.exp.accept(this);
       emitRR("STW", rsp, --rsp);
@@ -301,13 +291,10 @@ public class Codegenerator {
     }
     
     public void visit(VarDec varDec){
-      System.out.println("varDec");
     }
 
     public void visit(OpExp opExp){
-      System.out.println("opExp - left");
       opExp.left.accept(this);
-      System.out.println("opExp - right");
       opExp.right.accept(this);
       
       String opCode = "NULL";
@@ -333,7 +320,6 @@ public class Codegenerator {
     }
 
     public void visit(IntExp intExp){
-      System.out.println("intExp");
       
       emitRI("SETW", ++rsp, intExp.val);
       
@@ -342,8 +328,6 @@ public class Codegenerator {
     }
 
     public void visit(IfStm ifStm){
-      System.out.println("ifStm");
-      System.out.println(ifStm.elsePart.getClass());
       if(ifStm.elsePart instanceof EmptyStm) {
         elseBlock = false;
       } else {
