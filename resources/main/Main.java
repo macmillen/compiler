@@ -70,7 +70,7 @@ class Main {
 				if (inFileName != null)
 					outFileName = arg;
 				else
-					inFileName = arg;
+          inFileName = arg;
 			}
 		}
 		
@@ -112,8 +112,16 @@ class Main {
 			new VarAllocator(globalTable, optionVars).allocVars(program);
 			
 			try {
+        String[] fns = inFileName.split("/");
+        String[] fnp = fns[fns.length - 1].split("\\.");
+        String fn = "";
+        if(fnp.length > 1) {
+          fn = fnp[fnp.length - 2];
+        } else {
+          fn = fnp[0];
+        }
 				FileWriter outFile = new FileWriter(outFileName);
-				new Codegenerator(outFile).genCode(program, globalTable);
+				new Codegenerator(outFile).genCode(program, globalTable, fn);
 				outFile.close();
 			} catch (FileNotFoundException e) {
 				errmsg("**** Error: cannot open output file '" +

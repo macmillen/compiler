@@ -27,12 +27,19 @@ public class Codegenerator {
   boolean arguments = false;
   String procName = "";
   boolean isRef = false;
+  String fn = "";
+  int paramsOffset = 0;
+  int outgoingParams = 0;
+  int comparison;
+  int jumpCounter = 0;
+  boolean elseBlock = false;
 
 	public Codegenerator (FileWriter writer) {
     output = new PrintWriter(writer);
 	}
 
-	public void genCode(Absyn node, Table t) {
+	public void genCode(Absyn node, Table t, String fn) {
+    this.fn = fn;
 		assemblerProlog();
 		node.accept(new CodegenVisitor(t, firstReg));
 	}
@@ -48,6 +55,7 @@ public class Codegenerator {
 	}
 
 	private void assemblerProlog() {
+		emit(".object " + fn);
 		emitImport("printi");
 		emitImport("printc");
 		emitImport("readi");
@@ -89,6 +97,10 @@ public class Codegenerator {
 		output.format("%s $%d %d\n", opcode, reg1, value);
 	}
   
+	private void emitRS(String opcode, int reg1, String str) {
+		output.format("%s $%d %s\n", opcode, reg1, str);
+	}
+  
 	private void emitRR(String opcode, int reg1, int reg2) {
 		output.format("%s $%d $%d\n", opcode, reg1, reg2);
 	}
@@ -98,7 +110,7 @@ public class Codegenerator {
 	}
 
 	private void emitJump(String labelString) {
-		output.format("j%s\n", labelString);
+		output.format("JMP %s\n", labelString);
 	}
 
 	private void emitSS(String s1, String s2) {
@@ -112,13 +124,17 @@ public class Codegenerator {
       localTable = procEntry.localTable;
 
       int outgoingAreaSize = procEntry.outgoingAreaSize;
+      outgoingParams = outgoingAreaSize / 4;
       int localvarAreaSize = procEntry.localvarAreaSize;
       int argumentAreaSize = procEntry.argumentAreaSize;
 
+      emit(node.name.toString() + ":");
       emit("; procedure prologue");
       
-      emit("; allocate space for local variables (" + localvarAreaSize + " bytes)");
-      emitRRI("SUBC", SP, SP, localvarAreaSize);
+      if(localvarAreaSize > 0) {
+        emit("; allocate space for local variables (" + localvarAreaSize + " bytes)");
+        emitRRI("SUBC", SP, SP, localvarAreaSize);
+      }
 
       emit("; save old frame pointer (4 bytes)");
       emitRRI("SUBC", SP, SP, 4);
@@ -131,10 +147,14 @@ public class Codegenerator {
         emit("save return register (main calls at least one procedure in its body)");
         emitRRI("SUBC", SP, SP, 4);
         emitRR("STW", RETR, SP);
+        paramsOffset += 4;
       }
 
-      emit("; allocate space for outgoing arguments (" + outgoingAreaSize + " bytes)");
-      emitRRI("SUBC", SP, SP, outgoingAreaSize);
+      if(outgoingAreaSize > 0) {
+        emit("; allocate space for outgoing arguments (" + outgoingAreaSize + " bytes)");
+        emitRRI("SUBC", SP, SP, outgoingAreaSize);
+        paramsOffset += outgoingAreaSize;
+      }
 //simpleVar      (VarEntry) localTable.lookup(node.name);
 
 			/* get symbol table entry for this procedure */
@@ -159,12 +179,18 @@ public class Codegenerator {
       globalTable = t;
     }
     
+    public void visit(CompStm compStm){
+      compStm.stms.accept(this);
+    }
+      
     public void visit(CallStm callStm){
       System.out.println("callStm");
       arguments = true;
       procName = callStm.name.toString();
       callStm.args.accept(this);
-      emitRRI("SUBC", FP, FP, areaSize);
+      emit("; call procedure " + callStm.name.toString());
+      emitRS("CALL", RETR, callStm.name.toString());
+      // emitRRI("SUBC", FP, FP, areaSize);
     }
 
     public void visit(ExpList expList){
@@ -174,17 +200,25 @@ public class Codegenerator {
       for(Absyn exp: expList){
         if(arguments) {
           emit("; storing argument #" + index + " for procedure " + procName);
+        }
+        exp.accept(this);
+        if(arguments) {
           if(isRef) {
             // emitRRI("SUBC", reg1, reg2, value);
           } else {
             // emitRR("SETW", FP, reg2);
           }
-          // SETW $1 3
-          // SUBC $29 $29 20
-          // STW $1 $29
-          // ADDC $29 $29 20
+          System.out.println(outgoingParams);
+          System.out.println(paramsOffset);
+          outgoingParams--;
+          emitRRI("SUBC", FP, FP, 4 * outgoingParams + paramsOffset);
+          emitRR("STW", rsp, FP);
+          emitRRI("ADDC", FP, FP, 4 * outgoingParams + paramsOffset);
         }
-        exp.accept(this);
+        // SETW $1 3
+        // SUBC $29 $29 20
+        // STW $1 $29
+        // ADDC $29 $29 20
         index++;
         areaSize += 4;
       }
@@ -228,7 +262,6 @@ public class Codegenerator {
     }
 
     public void visit(AssignStm assignStm){
-      // no code to be generated
       System.out.println("assignStm");
       assignStm.var.accept(this);
       assignStm.exp.accept(this);
@@ -247,6 +280,13 @@ public class Codegenerator {
       
       String opCode = "NULL";
       switch(opExp.op) { 
+        case OpExp.LST: opCode = "LTI"; break;
+        case OpExp.LSE: opCode = "LEI"; break;
+        case OpExp.GRT: opCode = "GTI"; break;
+        case OpExp.GRE: opCode = "GEI"; break;
+        case OpExp.EQU: opCode = "EQ"; break;
+        case OpExp.NEQ: opCode = "NE"; break;
+
         case OpExp.ADD: opCode = "ADD"; break;
         case OpExp.SUB: opCode = "SUB"; break;
         case OpExp.MUL: opCode = "MULI"; break;
@@ -256,17 +296,73 @@ public class Codegenerator {
       rsp--;
     }
 
+    public void visit(EmptyStm emptyStm){
+      elseBlock = false;
+    }
+
     public void visit(IntExp intExp){
       System.out.println("intExp");
       
-      emitRI("SETW", ++rsp, intExp.val);
+      if(!arguments) {
+        rsp++;
+      }
+
+      emitRI("SETW", rsp, intExp.val);
     }
 
-    // SUBC $1 $29 4  load FP in $1
-    // SETW $2 1      save immidiatVal in $2
-    // SETW $3 2      save immidiatVal in $3
-    // ADD $2 $2 $3   ADD $2 + $3 and save in $2
-    // STW $2 $1      
+    public void visit(IfStm ifStm){
+      System.out.println("ifStm");
+      System.out.println(ifStm.elsePart.getClass());
+      if(ifStm.elsePart instanceof EmptyStm) {
+        elseBlock = false;
+      } else {
+        elseBlock = true;
+      }
 
+      ifStm.test.accept(this);
+
+      emitRS("BRF", rsp, "l" + jumpCounter);
+      
+      --rsp;
+      ifStm.thenPart.accept(this);
+      if(elseBlock) {
+        emitJump("l" + (jumpCounter + 1));
+      }
+      emitLabel("l" + jumpCounter);
+      
+      jumpCounter += 2;
+
+      --rsp;
+      ifStm.elsePart.accept(this);
+      
+      if(elseBlock) {
+        emitLabel("l" + (jumpCounter - 1));
+      }
+
+      jumpCounter -= 2;
+    }
+
+    public void visit(WhileStm whileStm){
+      emitJump("l" + jumpCounter);
+      jumpCounter += 1;
+      
+      emitLabel("l" + jumpCounter);
+      jumpCounter += 1;
+      // --rsp;
+      whileStm.body.accept(this);
+      // ++rsp;
+      jumpCounter -= 2;
+      emitLabel("l" + jumpCounter);
+      --rsp;
+      whileStm.test.accept(this);
+      ++rsp;
+      // --rsp;
+      --rsp;
+      emitRS("BRT", rsp, "l" + (jumpCounter + 1));
+      // jumpCounter -= 1;
+
+    }
+      
+    
 	}
 }
