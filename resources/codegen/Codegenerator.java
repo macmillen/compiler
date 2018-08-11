@@ -77,8 +77,8 @@ public class Codegenerator {
 		output.format("%s $%d $%d %d; %s\n", opcode, reg1, reg2, value, comment);
 	}
 
-	private void emitR(String opcode, int reg, String comment) {
-		output.format("%s$%d; %s\n", opcode, reg, comment);
+	private void emitR(String opcode, int reg) {
+		output.format("%s $%d\n", opcode, reg);
 	}
 
 	private void emitRRI(String opcode, int reg1, int reg2, int value) {
@@ -127,6 +127,7 @@ public class Codegenerator {
       outgoingParams = outgoingAreaSize / 4;
       int localvarAreaSize = procEntry.localvarAreaSize;
       int argumentAreaSize = procEntry.argumentAreaSize;
+      boolean isMainMethod = node.name.toString().equals("main");
 
       emit(node.name.toString() + ":");
       emit("; procedure prologue");
@@ -144,35 +145,51 @@ public class Codegenerator {
       emitRRI("ADDC", FP, SP, localvarAreaSize + 4);
       
       if(procEntry.isCaller) {
-        emit("save return register (main calls at least one procedure in its body)");
+        emit("; save return register (main calls at least one procedure in its body)");
         emitRRI("SUBC", SP, SP, 4);
         emitRR("STW", RETR, SP);
         paramsOffset += 4;
       }
 
-      if(outgoingAreaSize > 0) {
+      if(outgoingAreaSize > 0 || isMainMethod) {
         emit("; allocate space for outgoing arguments (" + outgoingAreaSize + " bytes)");
         emitRRI("SUBC", SP, SP, outgoingAreaSize);
         paramsOffset += outgoingAreaSize;
       }
-//simpleVar      (VarEntry) localTable.lookup(node.name);
 
 			/* get symbol table entry for this procedure */
       
 			/* prolog */
       
       /* epilog */
-      // emit("; procedure params");
       System.out.println("procDec - params");
       node.params.accept(this);
 
-      // emit("; procedure decls");
       System.out.println("procDec - decls");
       node.decls.accept(this);
 
       emit("; procedure body");
       System.out.println("procDec - body");
       node.body.accept(this);
+
+      emit("; procedure epilogue");
+
+      if(outgoingAreaSize > 0 || isMainMethod) {
+        emit("; restore return register");
+        emitRRI("ADDC", SP, SP, outgoingAreaSize);
+        emitRR("LDW", RETR, SP);
+        emitRRI("ADDC", SP, SP, 4);
+      }
+
+      emit("; restore old frame pointer");
+      emitRR("LDW", FP, SP);
+      emitRRI("ADDC", SP, SP, localvarAreaSize + 4);
+      emit("; return to caller");
+      emitR("JMPR", RETR);
+      emit("\n");
+      // wenn outgoingareasize dann return wieder
+      // herstellen
+      // (localAreaSize + 4)
 		}
 
 		public CodegenVisitor(Table t, int i){
@@ -185,7 +202,10 @@ public class Codegenerator {
       
     public void visit(CallStm callStm){
       System.out.println("callStm");
-      arguments = true;
+      ProcEntry p = (ProcEntry)globalTable.lookup(callStm.name);
+      if(p.argumentAreaSize == 0) {
+        arguments = false;
+      }
       procName = callStm.name.toString();
       callStm.args.accept(this);
       emit("; call procedure " + callStm.name.toString());
@@ -201,7 +221,6 @@ public class Codegenerator {
         if(arguments) {
           emit("; storing argument #" + index + " for procedure " + procName);
         }
-        exp.accept(this);
         if(arguments) {
           if(isRef) {
             // emitRRI("SUBC", reg1, reg2, value);
@@ -214,11 +233,9 @@ public class Codegenerator {
           emitRRI("SUBC", FP, FP, 4 * outgoingParams + paramsOffset);
           emitRR("STW", rsp, FP);
           emitRRI("ADDC", FP, FP, 4 * outgoingParams + paramsOffset);
+        } else {
+          exp.accept(this);
         }
-        // SETW $1 3
-        // SUBC $29 $29 20
-        // STW $1 $29
-        // ADDC $29 $29 20
         index++;
         areaSize += 4;
       }
@@ -240,17 +257,31 @@ public class Codegenerator {
     }
 
     public void visit(ArrayVar arrayVar){
-
       arrayVar.var.accept(this);
-      // int size = (ArrayType)arrayType.baseType.bytesize;
+      int bytesize = ((ArrayType)arrayType).baseType.byteSize;
       arrayVar.index.accept(this);
-      // (ArrayType)arrayType.size
+      int arrayLength = ((ArrayType)arrayType).size;
+      emit("; generating index");
+      emitRI("SETW", ++rsp, arrayLength);
+      emit("; boundary check");
+      emitRRR("LTI", rsp, rsp - 1, rsp);
+      emitRS("BRF", rsp--, "indexError");
+      emitRI("SETW", ++rsp, bytesize);
+      emitRRI("MULTI", rsp - 1, rsp - 1, rsp--);
+      emitRRI("ADD", rsp - 1, rsp - 1, rsp--);
+
+      // bei arrayAccess in arrayaAccess
+      // arrayType = arrayType.basetype
     }
     
     public void visit(SimpleVar simpleVar){
       System.out.println("simpleVar");
       VarEntry varEntry = (VarEntry)localTable.lookup(simpleVar.name);
-      arrayType = varEntry.type;
+
+      if(varEntry.type instanceof ArrayType) {
+        arrayType = varEntry.type;
+      }
+
       emitRRI("SUBC", ++rsp, FP, varEntry.offset);
       isRef = varEntry.isRef;
     }
@@ -266,6 +297,7 @@ public class Codegenerator {
       assignStm.var.accept(this);
       assignStm.exp.accept(this);
       emitRR("STW", rsp, --rsp);
+      --rsp;
     }
     
     public void visit(VarDec varDec){
@@ -303,11 +335,10 @@ public class Codegenerator {
     public void visit(IntExp intExp){
       System.out.println("intExp");
       
-      if(!arguments) {
-        rsp++;
-      }
-
-      emitRI("SETW", rsp, intExp.val);
+      emitRI("SETW", ++rsp, intExp.val);
+      
+      // if(!arguments) {
+      // }
     }
 
     public void visit(IfStm ifStm){
@@ -321,9 +352,8 @@ public class Codegenerator {
 
       ifStm.test.accept(this);
 
-      emitRS("BRF", rsp, "l" + jumpCounter);
+      emitRS("BRF", rsp--, "l" + jumpCounter);
       
-      --rsp;
       ifStm.thenPart.accept(this);
       if(elseBlock) {
         emitJump("l" + (jumpCounter + 1));
@@ -332,7 +362,6 @@ public class Codegenerator {
       
       jumpCounter += 2;
 
-      --rsp;
       ifStm.elsePart.accept(this);
       
       if(elseBlock) {
@@ -348,18 +377,13 @@ public class Codegenerator {
       
       emitLabel("l" + jumpCounter);
       jumpCounter += 1;
-      // --rsp;
+
       whileStm.body.accept(this);
-      // ++rsp;
       jumpCounter -= 2;
       emitLabel("l" + jumpCounter);
-      --rsp;
+      
       whileStm.test.accept(this);
-      ++rsp;
-      // --rsp;
-      --rsp;
-      emitRS("BRT", rsp, "l" + (jumpCounter + 1));
-      // jumpCounter -= 1;
+      emitRS("BRT", rsp--, "l" + (jumpCounter + 1));
 
     }
       

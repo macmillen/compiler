@@ -1,20 +1,24 @@
-//type a = array[10] of int;
+type a = array[10] of int;
 
 proc main() {
-  //var x: a;
+  var x: a;
   var i: int;
+  x[0] := 1;
+  x[11] := 1;
   i := 0;
   
-  while(i < 3) {
+  while(2 < 3) {
     if(i < 2) {
-      //i := i + 1;
+      i := i + 1;
     }
   }
 
-  //x[1] := 5;
+  x[1] := 5;
   //andere(3,4,5);
+  andere();
 }
 
-//proc andere(a: int, i: int, e: int) {
-
-//}
+proc andere() {
+  var x : a;
+  x[0] := 4;
+}
