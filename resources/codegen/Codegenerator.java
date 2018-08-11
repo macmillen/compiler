@@ -21,7 +21,6 @@ public class Codegenerator {
   final int RETR = 30;
   final int FP = 29;
   int rsp = 0;//7
-  int imm = -99;
   Type arrayType;
   int areaSize = 0;
   boolean arguments = true;
@@ -30,7 +29,6 @@ public class Codegenerator {
   String fn = "";
   int paramsOffset = 0;
   int outgoingParams = 0;
-  int comparison;
   int jumpCounter = 0;
   boolean elseBlock = false;
   boolean isCalling = true;
@@ -128,10 +126,9 @@ public class Codegenerator {
       outgoingParams = outgoingAreaSize / 4;
       int localvarAreaSize = procEntry.localvarAreaSize;
       int argumentAreaSize = procEntry.argumentAreaSize;
-      boolean isMainMethod = node.name.toString().equals("main");
       paramsOffset = localvarAreaSize;
 
-      emit(node.name.toString() + ":");
+      emit(node.id() + ":");
       emit("; procedure prologue");
       
       if(localvarAreaSize > 0) {
@@ -203,10 +200,10 @@ public class Codegenerator {
       if(p.argumentAreaSize == 0) {
         arguments = false;
       }
-      procName = callStm.name.toString();
+      procName = callStm.id();
       callStm.args.accept(this);
-      emit("; call procedure " + callStm.name.toString());
-      emitRS("CALL", RETR, callStm.name.toString());
+      emit("; call procedure " + callStm.id());
+      emitRS("CALL", RETR, callStm.id());
       isCalling = true;
       arguments = true;
     }

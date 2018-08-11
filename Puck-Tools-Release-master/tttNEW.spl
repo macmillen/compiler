@@ -1,37 +1,10 @@
-type a = array[10] of int;
+//
+// queens.spl -- the 8-queens problem
+//
 
 proc main() {
-  //var x: a;
-  //var i: int;
-  //var ff: int;
-  //var fff: int;
-  //var ffff: int;
-  //x[4] := 1;
-  //x[11] := 1;
-  //i := 0;
-  
-  //while(2 < 3) {
-  //  if(i < 2) {
-  //    i := i + 1;
-  //  }
-  //}
-
-  //x[1] := 5;
-  andere(5);
-  //andere();
+  while (1 < 8) {
+  }
+  while (1 < 15) {
+  }
 }
-
-proc andere(c:int) {}
-
-//proc andere() {
-//  var x : a;
-//  x[0] := 4;
-//}
-
-                        // (NOT = MUST NOT)
-// nur main ohne alles:
-// & mit andere() deklariert (nicht called):
-  // NOT ; allocate space for outgoing arguments (0 bytes)
-  // NOT ; restore return register
-// mit andere() called
-  // alles wird generiert
