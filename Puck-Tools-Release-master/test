@@ -1,0 +1,9 @@
+#!/bin/bash
+# My first script
+
+for i in ./*.a ; do \
+ echo ; \
+ echo -- Assemble $i -- ; \
+ java -jar puckasm.jar $i ; \
+done
+echo

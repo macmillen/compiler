@@ -1,0 +1,9 @@
+#!/bin/bash
+# My first script
+
+for i in stage/*.o ; do \
+ echo ; \
+ echo -- Assemble $i -- ; \
+ java -jar puckln.jar ${i##*/} -op stage/ -out bin/${i##*/}.x -proc main ; \
+done
+echo

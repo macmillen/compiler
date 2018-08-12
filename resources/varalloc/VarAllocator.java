@@ -127,14 +127,16 @@ public class VarAllocator {
 		}
 
 		public void visit(ProcDec procDec){
-			procEntry = (ProcEntry)globalTable.lookup(procDec.name);
+      procEntry = (ProcEntry)globalTable.lookup(procDec.name);
+      maxAreaSize = 0;
 			procDec.body.accept(this);
 		}
 
 		public void visit(CallStm callStm){
 			ProcEntry callee = (ProcEntry)globalTable.lookup(callStm.name);
 			if(maxAreaSize < callee.argumentAreaSize){
-				procEntry.outgoingAreaSize = callee.argumentAreaSize;
+        procEntry.outgoingAreaSize = callee.argumentAreaSize;
+        maxAreaSize = callee.argumentAreaSize;
       }
       procEntry.isCaller = true;
 		}

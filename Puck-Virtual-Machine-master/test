@@ -1,0 +1,9 @@
+#!/bin/bash
+# My first script
+
+for i in ./*.x ; do \
+ echo ; \
+ echo -- Test $i -- ; \
+ ./puck $i ; \
+done
+echo

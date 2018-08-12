@@ -1,0 +1,9 @@
+#!/bin/bash
+# My first script
+
+for i in ./*.o ; do \
+ echo ; \
+ echo -- Assemble $i -- ; \
+ cp $i stage/$i ; \
+done
+echo
