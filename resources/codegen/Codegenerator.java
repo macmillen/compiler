@@ -265,7 +265,7 @@ public class Codegenerator {
       emitRRR("ADD", rsp - 1, rsp - 1, rsp--);
 
       // bei arrayAccess in arrayaAccess
-      // arrayType = arrayType.basetype
+      arrayType = ((ArrayType)arrayType).baseType;
     }
     
     public void visit(SimpleVar simpleVar){

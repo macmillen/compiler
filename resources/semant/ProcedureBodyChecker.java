@@ -73,8 +73,8 @@ class ProcedureBodyChecker {
 		*/
 		public void visit(ArrayVar arrayVar){
 			arrayVar.var.accept(this);
-			System.out.println("###########################################"+resultType.toString());
-			SemanticChecker.checkClass(resultType, ArrayType.class, "illegal indexing a non-array ", arrayVar.row);
+			// System.out.println("###########################################"+resultType.toString());
+			// SemanticChecker.checkClass(resultType, ArrayType.class, "illegal indexing a non-array ", arrayVar.row);
 			arrayVar.index.accept(this);
 			SemanticChecker.checkClass(resultType, PrimitiveType.class, "illegal indexing with a non-integer ", arrayVar.index.row);
 		}
