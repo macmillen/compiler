@@ -27,8 +27,6 @@ public class Codegenerator {
   String procName = "";
   boolean isRef = false;
   String fn = "";
-  int paramsOffset = 0;
-  int outgoingParams = 0;
   int jumpCounter = 0;
   boolean elseBlock = false;
   boolean isCalling = true;
@@ -36,6 +34,8 @@ public class Codegenerator {
   int tempJumps = 0;
   ProcEntry p;
   boolean ref = false;
+  int localvarAreaSize;
+  int outgoingAreaSize;
 
 	public Codegenerator (FileWriter writer) {
     output = new PrintWriter(writer);
@@ -130,11 +130,9 @@ public class Codegenerator {
       ProcEntry procEntry = (ProcEntry) globalTable.lookup(node.name);
       localTable = procEntry.localTable;
 
-      int outgoingAreaSize = procEntry.outgoingAreaSize;
-      outgoingParams = outgoingAreaSize / 4;
-      int localvarAreaSize = procEntry.localvarAreaSize;
+      outgoingAreaSize = procEntry.outgoingAreaSize;
+      localvarAreaSize = procEntry.localvarAreaSize;
       int argumentAreaSize = procEntry.argumentAreaSize;
-      paramsOffset = localvarAreaSize;
 
       if(node.id().equals("main")) {
         emit(".executable main");
@@ -180,7 +178,6 @@ public class Codegenerator {
 
       emit("; procedure epilogue");
 
-      // if(outgoingAreaSize > 0) {
       if(isCalling && outgoingAreaSize > 0) {
         emit("; restore return register");
         emitRRI("ADDC", SP, SP, outgoingAreaSize);
@@ -195,8 +192,6 @@ public class Codegenerator {
       emit("; return to caller");
       emitR("JMPR", RETR);
       emit("\n");
-      // wenn outgoingareasize dann return wieder
-      // herstellen
 		}
 
 		public CodegenVisitor(Table t, int i){
@@ -231,10 +226,9 @@ public class Codegenerator {
         ref = p.paramTypes.get(index).isRef;
         exp.accept(this);
         if(arguments) {
-          outgoingParams--;
-          emitRRI("SUBC", FP, FP, 12 + 4 * outgoingParams + paramsOffset);
+          emitRRI("SUBC", FP, FP, 8 - 4 * index + localvarAreaSize + outgoingAreaSize);
           emitRR("STW", rsp--, FP);
-          emitRRI("ADDC", FP, FP, 12 + 4 * outgoingParams + paramsOffset);
+          emitRRI("ADDC", FP, FP, 8 - 4 * index + localvarAreaSize + outgoingAreaSize);
         } else {
         }
         index++;
@@ -339,6 +333,7 @@ public class Codegenerator {
     }
 
     public void visit(IfStm ifStm){
+      int elseLabel = label;
       if(ifStm.elsePart instanceof EmptyStm) {
         elseBlock = false;
       } else {
@@ -346,6 +341,7 @@ public class Codegenerator {
       }
       
       ifStm.test.accept(this);
+      
       emitRS("BRF", rsp--, "l" + newLabel());
       jumpCounter = 0;
 // emit(";;;TEST");
@@ -354,19 +350,16 @@ public class Codegenerator {
 // emit(";;;THEN");
 
       if(elseBlock) {
-        emitJump("l" + newLabel());
+        elseLabel = newLabel();
+        emitJump("l" + elseLabel);
         emitLabel("l" + (label - 2 - jumpCounter));
         jumpCounter++;
       }
       
       ifStm.elsePart.accept(this);
 // emit(";;;ELSE");
-      int el = (elseBlock ? 0 : 1);
-      emitLabel("l" + (label - el - jumpCounter));
+      emitLabel("l" + (elseLabel));
       jumpCounter++;
-      
-      if(elseBlock)
-        jumpCounter++;
     }
 
     public void visit(WhileStm whileStm){
