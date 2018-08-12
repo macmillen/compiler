@@ -12,11 +12,13 @@ public class VarEntry extends Entry {
 
   public Type type;
   public boolean isRef;
+  public boolean isParam;
   public int offset;		/* filled in by variable allocator */
 
-  public VarEntry(Type t, boolean r) {
+  public VarEntry(Type t, boolean r, boolean p) {
     type = t;
     isRef = r;
+    isParam = p;
   }
 
   public void show() {

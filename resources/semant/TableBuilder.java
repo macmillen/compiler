@@ -99,9 +99,10 @@ class TableBuilder {
 				throw new RuntimeException("redeclaration of " + node.name + " as parameter in line " + node.row);
 			}
 
-			node.ty.accept(this);
+      node.ty.accept(this);
 			ptList.add(new ParamType(resultType, node.isRef));
-			symTable.enter(node.name, new VarEntry(resultType, node.isRef));
+      symTable.enter(node.name, new VarEntry(resultType, node.isRef, true));
+      
 		}
 
 		public void visit(VarDec node) {
@@ -112,7 +113,7 @@ class TableBuilder {
 			}
 
 			node.ty.accept(this);
-			symTable.enter(node.name, new VarEntry(resultType, false));
+			symTable.enter(node.name, new VarEntry(resultType, false, false));
 		}
 	}
 }

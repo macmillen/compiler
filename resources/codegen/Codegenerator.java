@@ -12,7 +12,7 @@ import types.*;
 public class Codegenerator {
 
 	private PrintWriter output;
-	private int nextLabel = 0;
+	private int label = 0;
 	private static final int firstReg = 8;
   private static final int lastReg  = 23;
   private Table globalTable;
@@ -32,6 +32,10 @@ public class Codegenerator {
   int jumpCounter = 0;
   boolean elseBlock = false;
   boolean isCalling = true;
+  int totalJumps = 0;
+  int tempJumps = 0;
+  ProcEntry p;
+  boolean ref = false;
 
 	public Codegenerator (FileWriter writer) {
     output = new PrintWriter(writer);
@@ -49,9 +53,14 @@ public class Codegenerator {
 			("expression too complicated, running out of registers");
 	}
 
-	private String newLabel() {
-		return "L" + nextLabel++;
-	}
+	private int newLabel() {
+		return label++;
+  }
+  
+  private void jumper() {
+    jumpCounter++;
+    // tempJumps++;
+  }
 
 	private void assemblerProlog() {
 		emit(".object " + fn);
@@ -60,8 +69,7 @@ public class Codegenerator {
 		emitImport("readi");
 		emitImport("readc");
 		emitImport("exit");
-		emitImport("indexError");
-    emit("\n.executable main");
+		emitImport("indexError\n");
 	}
 
 	private void emitImport(String id) {
@@ -128,6 +136,10 @@ public class Codegenerator {
       int argumentAreaSize = procEntry.argumentAreaSize;
       paramsOffset = localvarAreaSize;
 
+      if(node.id().equals("main")) {
+        emit(".executable main");
+      }
+
       emit(node.id() + ":");
       emit("; procedure prologue");
       
@@ -144,12 +156,12 @@ public class Codegenerator {
       emitRRI("ADDC", FP, SP, localvarAreaSize + 4);
       
       if(procEntry.isCaller) {
-        emit("; save return register (main calls at least one procedure in its body)");
+        emit("; save return register (" + node.id() + " calls at least one procedure in its body)");
         emitRRI("SUBC", SP, SP, 4);
         emitRR("STW", RETR, SP);
       }
 
-      if(/*outgoingAreaSize > 0*/ isCalling && outgoingAreaSize > 0) {
+      if(/*outgoingAreaSize > 0*/ outgoingAreaSize > 0) {
         emit("; allocate space for outgoing arguments (" + outgoingAreaSize + " bytes)");
         emitRRI("SUBC", SP, SP, outgoingAreaSize);
       }
@@ -196,7 +208,8 @@ public class Codegenerator {
     }
       
     public void visit(CallStm callStm){
-      ProcEntry p = (ProcEntry)globalTable.lookup(callStm.name);
+      p = (ProcEntry)globalTable.lookup(callStm.name);
+
       if(p.argumentAreaSize == 0) {
         arguments = false;
       }
@@ -215,16 +228,12 @@ public class Codegenerator {
         if(arguments) {
           emit("; storing argument #" + index + " for procedure " + procName);
         }
+        ref = p.paramTypes.get(index).isRef;
         exp.accept(this);
         if(arguments) {
-          if(isRef) {
-            // emitRRI("SUBC", reg1, reg2, value);
-          } else {
-            // emitRR("SETW", FP, reg2);
-          }
           outgoingParams--;
           emitRRI("SUBC", FP, FP, 12 + 4 * outgoingParams + paramsOffset);
-          emitRR("STW", rsp, FP);
+          emitRR("STW", rsp--, FP);
           emitRRI("ADDC", FP, FP, 12 + 4 * outgoingParams + paramsOffset);
         } else {
         }
@@ -232,6 +241,7 @@ public class Codegenerator {
         areaSize += 4;
       }
       arguments = false;
+      ref = false;
     }
 
     public void visit(DecList decList){ // 1x
@@ -266,18 +276,26 @@ public class Codegenerator {
     
     public void visit(SimpleVar simpleVar){
       VarEntry varEntry = (VarEntry)localTable.lookup(simpleVar.name);
-
+      
       if(varEntry.type instanceof ArrayType) {
         arrayType = varEntry.type;
       }
 
-      emitRRI("SUBC", ++rsp, FP, varEntry.offset);
+      if(varEntry.isParam) {
+        emitRRI("ADDC", ++rsp, FP, varEntry.offset);
+      } else {
+        emitRRI("SUBC", ++rsp, FP, varEntry.offset);
+      }
       isRef = varEntry.isRef;
+      if(isRef) {
+        emitRR("LDW", rsp, rsp);
+      }
     }
     
     public void visit(VarExp varExp){
       varExp.var.accept(this);
-      emitRR("LDW", rsp, rsp);
+      if(!ref)
+        emitRR("LDW", rsp, rsp);
     }
 
     public void visit(AssignStm assignStm){
@@ -295,7 +313,7 @@ public class Codegenerator {
       opExp.right.accept(this);
       
       String opCode = "NULL";
-      switch(opExp.op) { 
+      switch(opExp.op) {
         case OpExp.LST: opCode = "LTI"; break;
         case OpExp.LSE: opCode = "LEI"; break;
         case OpExp.GRT: opCode = "GTI"; break;
@@ -317,11 +335,7 @@ public class Codegenerator {
     }
 
     public void visit(IntExp intExp){
-      
       emitRI("SETW", ++rsp, intExp.val);
-      
-      // if(!arguments) {
-      // }
     }
 
     public void visit(IfStm ifStm){
@@ -330,41 +344,46 @@ public class Codegenerator {
       } else {
         elseBlock = true;
       }
-
+      
       ifStm.test.accept(this);
+      emitRS("BRF", rsp--, "l" + newLabel());
+      jumpCounter = 0;
+// emit(";;;TEST");
 
-      emitRS("BRF", rsp--, "l" + jumpCounter);
-      
       ifStm.thenPart.accept(this);
-      if(elseBlock) {
-        emitJump("l" + (jumpCounter + 1));
-      }
-      emitLabel("l" + jumpCounter);
-      
-      jumpCounter += 2;
+// emit(";;;THEN");
 
+      if(elseBlock) {
+        emitJump("l" + newLabel());
+        emitLabel("l" + (label - 2 - jumpCounter));
+        jumpCounter++;
+      }
+      
       ifStm.elsePart.accept(this);
+// emit(";;;ELSE");
+      int el = (elseBlock ? 0 : 1);
+      emitLabel("l" + (label - el - jumpCounter));
+      jumpCounter++;
       
-      if(elseBlock) {
-        emitLabel("l" + (jumpCounter - 1));
-      }
-
-      jumpCounter -= 2;
+      if(elseBlock)
+        jumpCounter++;
     }
 
     public void visit(WhileStm whileStm){
-      emitJump("l" + jumpCounter);
-      jumpCounter += 1;
+      jumpCounter = 0;
       
-      emitLabel("l" + jumpCounter);
-      jumpCounter += 1;
+      emitJump("l" + label);
+      emitLabel("l" + (label + 1));
 
+      newLabel();
+      newLabel();
       whileStm.body.accept(this);
-      jumpCounter -= 2;
-      emitLabel("l" + jumpCounter);
+      jumpCounter+=2;
+      emitLabel("l" + (label - jumpCounter));
       
       whileStm.test.accept(this);
-      emitRS("BRT", rsp--, "l" + (jumpCounter + 1));
+      emitRS("BRT", rsp--, "l" + (label - jumpCounter + 1));
+      // (label - el - jumpCounter)
 
     }
       
